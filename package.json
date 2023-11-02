@@ -9,6 +9,10 @@
   "categories": [
     "Other"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/amblafont/vscode-coreact-yade"
+  },
   "activationEvents": ["onLanguage:coq"],
   "main": "./out/extension.js",
   "contributes": {
