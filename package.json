@@ -3,6 +3,7 @@
   "displayName": "coreact-yade",
   "description": "Support for the coreact-yade editor",
   "version": "0.0.1",
+  "publisher": "amblafont",
   "engines": {
     "vscode": "^1.83.0"
   },
