@@ -10,7 +10,6 @@ vsc-extension-quickstart.md
 **/*.ts
 
 # Build setup
-node_modules/
 esbuild.mjs
 **/tsconfig*.json
 **/*.tsbuildinfo
