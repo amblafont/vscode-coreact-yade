@@ -2,24 +2,9 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { extensions } from "vscode";
-import { CoqLspAPI, sendYade, sendNewEquation, completeEquation } from './yade';
+import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi } from './yade';
 
-function getCoqApi() : CoqLspAPI | undefined {
-	let coqlsp = extensions.getExtension('ejgallego.coq-lsp');
-	if (!coqlsp) {
-			console.log("Extension coq-lsp not found");
-			return;
-	}
-	if (!coqlsp.activate) {
-		console.log("Extension coq-lsp inactive");
-		return;
-	}
-	if (coqlsp.exports === undefined) {
-		console.log("Extension coq-lsp not exporting any API");
-		return;
-	}
-	return coqlsp.exports as CoqLspAPI;
-}
+
 
 export function activate(context: vscode.ExtensionContext) {
 

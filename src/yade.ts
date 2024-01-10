@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import {Range} from 'vscode';
+import {Range, extensions} from 'vscode';
 import * as child_process from 'child_process';
 import {
 	VersionedTextDocumentIdentifier,
@@ -17,6 +17,22 @@ export interface CoqLspAPI {
 	goalsRequest(params: GoalRequest): Promise<GoalAnswer<PpString>>;
   }
 
+export function getCoqApi() : CoqLspAPI | undefined {
+    let coqlsp = extensions.getExtension('ejgallego.coq-lsp');
+    if (!coqlsp) {
+        console.log("Extension coq-lsp not found");
+        return;
+    }
+    if (!coqlsp.activate) {
+      console.log("Extension coq-lsp inactive");
+      return;
+    }
+    if (coqlsp.exports === undefined) {
+      console.log("Extension coq-lsp not exporting any API");
+      return;
+    }
+    return coqlsp.exports as CoqLspAPI;
+}
 
 // do not use this variable directly: instead, use launchYade()
 let yadeProcess : child_process.ChildProcess | undefined
@@ -100,12 +116,13 @@ function handleMsg(message:any) {
 	if (!message.key) {
 		return;
 	}
+  const editor = vscode.window.activeTextEditor;
 	switch (message.key) {
 		case 'incomplete-equation':			
-      const editor = vscode.window.activeTextEditor;
       if (!editor) {return;}
-
-			const startText = "eassert (yade : " + message.content + ").\n{\n"
+      const statement = message.content.statement;
+      const proof = message.content.script;
+			const startText = "eassert (yade : " + statement + ").\n{\n" + proof;
       const endText = "\n}"
         + "\n (* execute command at the end of the line below *)"
         + "\n norm_graph_hyp yade.  ";
@@ -131,6 +148,13 @@ function handleMsg(message:any) {
     
       // insertAfterCursor(text);
 			break;
+    case 'apply-proof':	
+      if (!editor) {return;}
+      const api = getCoqApi();
+      if (!api)
+        return
+      applyProof(api, message.content.statement, message.content.script)
+      break;
     case 'generate-proof':
             insertAtCursor(message.content);
             break;
@@ -242,12 +266,63 @@ export function completeEquation(coqApi:CoqLspAPI, editor: vscode.TextEditor) {
     (goals) => { 
         var hyps = goals.goals?.goals[0].hyps;
         var eq = hyps![hyps!.length - 1].ty;
-        sendYade("complete-equation", {statement:eq, script:coqScript});
+        sendYade("applied-proof", {statement:eq, script:coqScript});
         editor.edit(editBuilder => {
             editBuilder.delete(new Range(assertLine, 0, line + 1, 0));
         });
      },
     (reason) => console.log("error: " + reason)
   );
+}
+
+function applyProof(coqApi:CoqLspAPI, statement:string, proofScript:string) {
+  // TODO factor with completeEquation
+  const editor = vscode.window.activeTextEditor;
+  if(!editor) {
+    return
+  }
+  let normalisedProof = proofScript.trim();
+  if (normalisedProof != "" && normalisedProof.substring(normalisedProof.length - 1) == ".")
+     normalisedProof = normalisedProof.substring(0, normalisedProof.length - 1)
+  // const fullProof = "(eassert (yade : " + statement + ");first by "
+  //         + proofScript + "); norm_graph_hyp yade.";
+  const fullProof = "(eassert (yade : " + statement + "); first by "
+          + normalisedProof + ") ; norm_graph_hyp yade.";
+  console.log(fullProof)
+  let uri = editor.document.uri;
+  let version = editor.document.version;
+          
+  let textDocument = VersionedTextDocumentIdentifier.create(
+    uri.toString(),
+    version
+  );
+ let strCursor: GoalRequest = {
+   textDocument,
+   position: editor.selection.active,
+   pp_format: "Str",
+   pretac: fullProof
+ };
+ coqApi.goalsRequest(strCursor).then(
+   (goals) => { 
+       var hyps = goals.goals?.goals[0].hyps;
+       if (!hyps) {
+        let msg : string
+        if (normalisedProof.includes("."))
+           msg = 'Failed proof, probably due to the use of dot-separated tactics (not yet supported)';
+        else 
+           msg = 'Failed proof: ' + fullProof;  
+        vscode.window.showInformationMessage(msg);
+        return;
+       }
+       vscode.window.showInformationMessage('Valid proof: ' + fullProof);
+         
+       console.log(goals);
+       var eq = hyps![hyps!.length - 1].ty;
+       var data = { script: proofScript, statement:eq};
+       
+       sendYade("applied-proof", data);
+    },
+   (reason) => console.log("error: " + reason)
+ );
 }
 
