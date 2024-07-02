@@ -1,6 +1,6 @@
 # coreact-yade README
 
-This is an extension building upon the coq-lsp extension for the [Coreact YADE editor](https://github.com/amblafont/graph-editor-web).
+This extension runs the [Coreact YADE editor](https://github.com/amblafont/graph-editor-web) in a vscode tab (webview) to help mechanising commutations of categorical diagrams with the Coq proof assistant. It builds upon the coq-lsp extension.
 
 ## Features
 
@@ -11,7 +11,7 @@ See https://github.com/amblafont/vscode-yade-example for an example of use.
 
 ## Requirements
 
-You need coq-lsp vscode extension and the desktop (electron) version of the [Coreact YADE editor](https://github.com/amblafont/graph-editor-web/releases).
+You need coq-lsp vscode extension.
 
 ## Extension Settings
 
@@ -22,6 +22,10 @@ None.
 None.
 
 ## Release Notes
+
+### 1.0.1
+
+No need for the desktop version of coreact-yade: it directly runs in a vscode tab.
 
 ### 1.0.0
 

@@ -2,10 +2,13 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { extensions } from "vscode";
-import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi } from './yade';
+import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor } from './yade';
+import * as path from 'path';
+import * as fs from 'fs';
 
-
-
+const relativeLinks = ["elm.js","js/katex.min.css.js",
+"js/katex-custom-element.js"
+]
 export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Activating coreact-yade');
@@ -18,14 +21,15 @@ export function activate(context: vscode.ExtensionContext) {
 			if (!coqApi) return;
 	
 			let editor = evt.textEditor;
+			setCoqEditor(editor);
 			let position = editor.selection.active;
 			
 			const magic_string = "YADE DIAGRAM";
 			let line = editor.document.lineAt(position).text.trim();
 			if (line.startsWith(magic_string))
-			  sendYade("set-first-tab", line.slice(magic_string.length));            
+			  sendYade(context, "set-first-tab", line.slice(magic_string.length));            
 			else
-			  sendNewEquation(coqApi, editor);
+			  sendNewEquation(context, coqApi, editor);
 			  }
 		)
 	  );
@@ -35,7 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
 		   {
 			let coqApi = getCoqApi();
 			if (!coqApi) return;
-			completeEquation(coqApi, editor);          
+			completeEquation(context, coqApi, editor);          
      })
 	);
 }

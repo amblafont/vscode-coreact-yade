@@ -8,6 +8,13 @@ import {
 // import {client} from './client'
 import { GoalRequest, GoalAnswer, PpString } from "./types";
 
+import * as path from 'path';
+import * as fs from 'fs';
+
+const relativeLinks = ["elm.js","js/katex.min.css.js",
+"js/katex-custom-element.js"
+]
+
 // Extension API type (note this doesn't live in `lib` as this is VSCode specific)
 export interface CoqLspAPI {
 	/**
@@ -35,54 +42,73 @@ export function getCoqApi() : CoqLspAPI | undefined {
 }
 
 // do not use this variable directly: instead, use launchYade()
-let yadeProcess : child_process.ChildProcess | undefined
+// let yadeProcess : child_process.ChildProcess | undefined
+// Only allow a single Cat Coder
+let yadePanel: vscode.WebviewPanel | undefined = undefined;
+let coqEditor : vscode.TextEditor | undefined = undefined;
 
-function launchYade():child_process.ChildProcess {
-	if (yadeProcess !== undefined)
-	   {return yadeProcess;}
-  console.log("Launching YADE");
-	// let cwdYade = '/home/ouguir/elm/diagram';
-	// let electronPath = cwdYade + "/node_modules/electron/dist/electron";
+function launchYade(context:vscode.ExtensionContext):vscode.WebviewPanel {
+	if (yadePanel !== undefined)
+	   {return yadePanel;}
+
 	
-  let yadeExecutable : string;
-  switch (process.platform) {
-    case 'darwin':
-       yadeExecutable = "/Applications/YADE.app/Contents/MacOS/YADE";
-       break;
-    default:
-       yadeExecutable = "coreact-yade";
-  }
-  // yadeProcess = child_process.spawn("open", ["-a", "YADE"], 
-  yadeProcess = child_process.spawn(yadeExecutable, [], 
-	  //  electronPath, [cwdYade], 
-	   {env:{...process.env, ELECTRON_RUN_AS_NODE: ''}, 
-	   stdio: [ 'inherit', 'inherit', 'inherit', 'ipc' ]});
-    yadeProcess.on('exit', signal => {yadeProcess = undefined})
-	yadeProcess.on('message', message => {console.log("message recu: ");
-      console.log(message);
-	  handleMsg(message);
-	});
-  if(typeof yadeProcess.pid !== "number")
-    console.log("Fail to load YADE.");
-  
-	return yadeProcess;
+  const panel = vscode.window.createWebviewPanel(
+    'YADE',
+    'YADE',
+    vscode.ViewColumn.One,
+    {
+        enableScripts: true // Enable scripts in the webview
+        , retainContextWhenHidden: true // keep the state of the webview when hidden
+    }
+);
+  panel.onDidDispose(() => {
+   yadePanel = undefined;
+  });
+
+// Get the path to the HTML file
+const htmlPath = path.join(context.extensionPath, 'media', 'grapheditor.html');
+
+// Read the HTML file content
+var htmlContent = fs.readFileSync(htmlPath, 'utf8');
+for (var relLink of relativeLinks) {
+// Get path to resource on disk
+const onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'media', relLink);
+
+// And get the special URI to use with the webview
+const correctLink = panel.webview.asWebviewUri(onDiskPath)
+htmlContent = htmlContent.replace(relLink, correctLink.toString());
+}
+
+// Set the HTML content to the webview
+panel.webview.html = htmlContent;
+// Handle messages from the webview
+panel.webview.onDidReceiveMessage(
+  message => {
+	  handleMsg(context,message);
+  },
+  undefined,
+  context.subscriptions
+);
+yadePanel = panel;
+return yadePanel;
+
 }
 
 
 function insertAt(text:string, position:vscode.Position) {
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor;
   if (!editor) {return;}
   return editor.edit(editBuilder => {
       editBuilder.insert(position, text);
   });
 }
 function insertAtCursor(text:string) {
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor;
   if (!editor) {return;}
   return insertAt(text, editor.selection.active);
 }
 function insertAfterCursor(text:string){
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor;
   if (!editor) {return;}
   let position = editor.selection.active;
   position = new vscode.Position(position.line, position.character+1)
@@ -91,7 +117,7 @@ function insertAfterCursor(text:string){
 
 // https://stackoverflow.com/questions/69671964/how-to-put-cursor-on-specified-line-in-vscode-editor-extension-programatically
 function moveCursorLeft() {
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor;
   if (!editor)
      return false;
   const newSelections = [];
@@ -112,12 +138,23 @@ function moveCursorLeft() {
   editor.selections = newSelections;
   return true;
 }
-function handleMsg(message:any) {
+function handleMsg(context:vscode.ExtensionContext,message:any) {
 	if (!message.key) {
 		return;
 	}
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor;
 	switch (message.key) {
+    case 'prompt':
+      const question = message.content.question;
+      const defaultAnswer = message.content.default;
+      // open a prompt dialog box
+      vscode.window.showInputBox({prompt: question, value: defaultAnswer}).then(
+        (answer) => {
+          if (answer !== undefined)
+            sendYade(context, "prompt", answer);
+        }
+      );
+      break;
 		case 'incomplete-equation':			
       if (!editor) {return;}
       const statement = message.content.statement;
@@ -126,6 +163,9 @@ function handleMsg(message:any) {
       const endText = "\n}"
         + "\n (* execute command at the end of the line below *)"
         + "\n norm_graph_hyp yade.  ";
+      // first, show the text editor with showTextDocument
+      // vscode.window.showInformationMessage('incomplete equation');
+      vscode.window.showTextDocument(editor.document, editor.viewColumn, true).then(function () {
       insertAtCursor(startText + " ")?.then(function (b){
         if (!b)
           return;
@@ -133,7 +173,7 @@ function handleMsg(message:any) {
           return;
         insertAfterCursor(endText);
         
-      });
+      });});
       // const curPosition = editor.selection.active;
       // let curLine = curPosition.line;
       // let curChar = curPosition.character;
@@ -149,25 +189,34 @@ function handleMsg(message:any) {
       // insertAfterCursor(text);
 			break;
     case 'apply-proof':	
-      if (!editor) {return;}
+      if (!editor) {
+        return;
+      }
       const api = getCoqApi();
       if (!api)
         return
-      applyProof(api, message.content.statement, message.content.script)
+      applyProof(context, api, message.content.statement, message.content.script)
       break;
     case 'generate-proof':
-            insertAtCursor(message.content);
+      if (!editor) {
+        return;
+      }
+      vscode.window.showTextDocument(editor.document, editor.viewColumn, true).then(function () {
+            insertAtCursor(message.content);});
             break;
 	}
 }
 
-export function sendYade(key:String, content:any) {
-	launchYade().send({key:key, content:content});
+export function sendYade(context:vscode.ExtensionContext ,key:String, content:any) {
+  let data = {key:key, content:content};
+	launchYade(context).webview.postMessage(data);
 }
 
+export function setCoqEditor(editor:vscode.TextEditor) {
+  coqEditor = editor;
+}
 
-
-export function sendNewEquation(api:CoqLspAPI, editor:vscode.TextEditor) {
+export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, editor:vscode.TextEditor) {
   let version = editor.document.version;
   let position = editor.selection.active;
   let line = editor.document.lineAt(position);
@@ -188,7 +237,7 @@ export function sendNewEquation(api:CoqLspAPI, editor:vscode.TextEditor) {
     
        if (! goals.goals)
          return;
-       sendYade("load", goals.goals?.goals[0].ty);
+       sendYade(context, "load", goals.goals?.goals[0].ty);
     },
    (reason) => console.log("error: " + reason)
  );
@@ -233,7 +282,8 @@ function findNextNormGraphHyp(editor:vscode.TextEditor):vscode.Position {
 
 }
 
-export function completeEquation(coqApi:CoqLspAPI, editor: vscode.TextEditor) {
+export function completeEquation(context:vscode.ExtensionContext, coqApi:CoqLspAPI, editor: vscode.TextEditor) {
+  coqEditor = editor;
   let uri = editor.document.uri;
   let version = editor.document.version;
   let position = editor.selection.active;
@@ -251,8 +301,8 @@ export function completeEquation(coqApi:CoqLspAPI, editor: vscode.TextEditor) {
   let coqScript = editor.document.getText(new Range(startScript, 0, endScript + 1, 0));
   // remove the last newline character
   coqScript = coqScript.slice(0, -1);
-  console.log("coq script: ") ;
-  console.log(coqScript);
+  // console.log("coq script: ") ;
+  // console.log(coqScript);
   let textDocument = VersionedTextDocumentIdentifier.create(
      uri.toString(),
      version
@@ -266,7 +316,7 @@ export function completeEquation(coqApi:CoqLspAPI, editor: vscode.TextEditor) {
     (goals) => { 
         var hyps = goals.goals?.goals[0].hyps;
         var eq = hyps![hyps!.length - 1].ty;
-        sendYade("applied-proof", {statement:eq, script:coqScript});
+        sendYade(context, "applied-proof", {statement:eq, script:coqScript});
         editor.edit(editBuilder => {
             editBuilder.delete(new Range(assertLine, 0, line + 1, 0));
         });
@@ -275,9 +325,9 @@ export function completeEquation(coqApi:CoqLspAPI, editor: vscode.TextEditor) {
   );
 }
 
-function applyProof(coqApi:CoqLspAPI, statement:string, proofScript:string) {
+function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement:string, proofScript:string) {
   // TODO factor with completeEquation
-  const editor = vscode.window.activeTextEditor;
+  const editor = coqEditor; // vscode.window.activeTextEditor;
   if(!editor) {
     return
   }
@@ -320,7 +370,7 @@ function applyProof(coqApi:CoqLspAPI, statement:string, proofScript:string) {
        var eq = hyps![hyps!.length - 1].ty;
        var data = { script: proofScript, statement:eq};
        
-       sendYade("applied-proof", data);
+       sendYade(context, "applied-proof", data);
     },
    (reason) => console.log("error: " + reason)
  );
