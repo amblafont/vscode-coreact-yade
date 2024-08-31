@@ -2,9 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { extensions } from "vscode";
-import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor } from './yade';
-import * as path from 'path';
-import * as fs from 'fs';
+import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade } from './yade';
 
 const relativeLinks = ["elm.js","js/katex.min.css.js",
 "js/katex-custom-element.js"
@@ -41,6 +39,17 @@ export function activate(context: vscode.ExtensionContext) {
 			if (!coqApi) return;
 			completeEquation(context, coqApi, editor);          
      })
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('coreact-yade.launchYade', () => {
+			launchYade(context);
+		})
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('coreact-yade.launchExperimentalYade', () => {
+			vscode.window.showInformationMessage('Launching experimental Yade');
+			launchYade(context, true);
+		})
 	);
 }
 

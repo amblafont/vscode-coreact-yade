@@ -23,6 +23,10 @@ None.
 
 ## Release Notes
 
+### 1.0.2
+
+Web extension capabilities.
+
 ### 1.0.1
 
 No need for the desktop version of coreact-yade: it directly runs in a vscode tab.

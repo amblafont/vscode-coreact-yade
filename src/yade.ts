@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import {Range, extensions} from 'vscode';
-import * as child_process from 'child_process';
 import {
 	VersionedTextDocumentIdentifier,
   } from "vscode-languageclient";
@@ -8,12 +7,15 @@ import {
 // import {client} from './client'
 import { GoalRequest, GoalAnswer, PpString } from "./types";
 
-import * as path from 'path';
-import * as fs from 'fs';
 
 const relativeLinks = ["elm.js","js/katex.min.css.js",
+  "watcher.js",
 "js/katex-custom-element.js"
-]
+];
+
+const experimentalLink = "https://amblafont.github.io/graph-editor-experimental/";
+// const experimentalLink = "http://localhost:8000/";
+
 
 // Extension API type (note this doesn't live in `lib` as this is VSCode specific)
 export interface CoqLspAPI {
@@ -27,15 +29,15 @@ export interface CoqLspAPI {
 export function getCoqApi() : CoqLspAPI | undefined {
     let coqlsp = extensions.getExtension('ejgallego.coq-lsp');
     if (!coqlsp) {
-        console.log("Extension coq-lsp not found");
+      vscode.window.showErrorMessage("YADE: Extension coq-lsp not found");
         return;
     }
     if (!coqlsp.activate) {
-      console.log("Extension coq-lsp inactive");
+      vscode.window.showErrorMessage("YADE: Extension coq-lsp inactive");
       return;
     }
     if (coqlsp.exports === undefined) {
-      console.log("Extension coq-lsp not exporting any API");
+      vscode.window.showErrorMessage("YADE: Extension coq-lsp not exporting any API");
       return;
     }
     return coqlsp.exports as CoqLspAPI;
@@ -47,7 +49,7 @@ export function getCoqApi() : CoqLspAPI | undefined {
 let yadePanel: vscode.WebviewPanel | undefined = undefined;
 let coqEditor : vscode.TextEditor | undefined = undefined;
 
-function launchYade(context:vscode.ExtensionContext):vscode.WebviewPanel {
+export function launchYade(context:vscode.ExtensionContext, experimental = false):vscode.WebviewPanel {
 	if (yadePanel !== undefined)
 	   {return yadePanel;}
 
@@ -59,28 +61,57 @@ function launchYade(context:vscode.ExtensionContext):vscode.WebviewPanel {
     {
         enableScripts: true // Enable scripts in the webview
         , retainContextWhenHidden: true // keep the state of the webview when hidden
+        ,  localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
     }
 );
   panel.onDidDispose(() => {
    yadePanel = undefined;
   });
 
-// Get the path to the HTML file
-const htmlPath = path.join(context.extensionPath, 'media', 'grapheditor.html');
+
+// use the fetch api to get the file https://amblafont.github.io/graph-editor-experimental/index.html
+// and then replace the relative links with the correct ones
+
+let htmlPromise: PromiseLike<string>;
+const mediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
+
+if (experimental)
+  htmlPromise = fetch(experimentalLink + 'index.html')
+  .then(response => response.text());
+else {
+  // Get the path to the HTML file
+  const htmlPath = vscode.Uri.joinPath(mediaUri, 'index.html');
+  htmlPromise = vscode.workspace.fs.readFile(htmlPath)
+  .then (htmlContentArr => {
+    // Convert Uint8Array to string
+    return new TextDecoder().decode(htmlContentArr);
+  });
+
+}
+
+  
+
+
 
 // Read the HTML file content
-var htmlContent = fs.readFileSync(htmlPath, 'utf8');
+htmlPromise.then (htmlContent => {
 for (var relLink of relativeLinks) {
-// Get path to resource on disk
-const onDiskPath = vscode.Uri.joinPath(context.extensionUri, 'media', relLink);
+  // Get path to resource on disk
+  let correctLink: string;
+  if (experimental)
+    correctLink = experimentalLink + relLink;
+  else {
+    const onDiskPath = vscode.Uri.joinPath(mediaUri, relLink); 
+    // And get the special URI to use with the webview
+    correctLink = panel.webview.asWebviewUri(onDiskPath).toString();
+  }
 
-// And get the special URI to use with the webview
-const correctLink = panel.webview.asWebviewUri(onDiskPath)
-htmlContent = htmlContent.replace(relLink, correctLink.toString());
+  htmlContent = htmlContent.replace(relLink, correctLink);
 }
 
 // Set the HTML content to the webview
 panel.webview.html = htmlContent;
+});
 // Handle messages from the webview
 panel.webview.onDidReceiveMessage(
   message => {
@@ -144,6 +175,9 @@ function handleMsg(context:vscode.ExtensionContext,message:any) {
 	}
   const editor = coqEditor;
 	switch (message.key) {
+    case 'alert':
+      vscode.window.showInformationMessage(message.content);
+      break;
     case 'prompt':
       const question = message.content.question;
       const defaultAnswer = message.content.default;
@@ -352,16 +386,20 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
    pp_format: "Str",
    pretac: fullProof
  };
+
+ function explainFailure() {
+  let msg : string
+  if (normalisedProof.includes("."))
+     msg = 'Failed proof, probably due to the use of dot-separated tactics (not yet supported)';
+  else 
+     msg = 'Failed proof: ' + fullProof;  
+  vscode.window.showErrorMessage(msg);
+ }
  coqApi.goalsRequest(strCursor).then(
    (goals) => { 
        var hyps = goals.goals?.goals[0].hyps;
        if (!hyps) {
-        let msg : string
-        if (normalisedProof.includes("."))
-           msg = 'Failed proof, probably due to the use of dot-separated tactics (not yet supported)';
-        else 
-           msg = 'Failed proof: ' + fullProof;  
-        vscode.window.showInformationMessage(msg);
+        explainFailure();
         return;
        }
        vscode.window.showInformationMessage('Valid proof: ' + fullProof);
@@ -372,7 +410,9 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
        
        sendYade(context, "applied-proof", data);
     },
-   (reason) => console.log("error: " + reason)
+   (reason) => { 
+     explainFailure();
+     console.log("error: " + reason); }
  );
 }
 
