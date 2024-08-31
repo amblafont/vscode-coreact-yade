@@ -23,6 +23,10 @@ None.
 
 ## Release Notes
 
+### 1.0.3
+
+Integrated YADE server.
+
 ### 1.0.2
 
 Web extension capabilities.

@@ -2,7 +2,7 @@
   "name": "coreact-yade",
   "displayName": "coreact-yade",
   "description": "Support for the coreact-yade editor",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "publisher": "amblafont",
   "engines": {
     "vscode": "^1.92.0"
@@ -41,7 +41,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js",    
+    "test": "node ./out/test/runTest.js",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
@@ -58,6 +58,7 @@
     "@types/mocha": "^10.0.7",
     "@types/node": "^22.5.1",
     "@types/vscode": "^1.92.0",
+    "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
     "@vscode/test-web": "^0.0.55",
@@ -71,6 +72,8 @@
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1",
-    "vscode-languageserver-types": "^3.17.5"
+    "vscode-languageserver-types": "^3.17.5",
+    "vsls": "^1.0.4753",
+    "ws": "^8.18.0"
   }
 }

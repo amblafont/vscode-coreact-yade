@@ -1,8 +1,11 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import * as vsls from 'vsls';
 import { extensions } from "vscode";
-import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade } from './yade';
+import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade, trySendYade } from './yade';
+
+const serverUrl = "ws://localhost:8080";
 
 const relativeLinks = ["elm.js","js/katex.min.css.js",
 "js/katex-custom-element.js"
@@ -51,6 +54,43 @@ export function activate(context: vscode.ExtensionContext) {
 			launchYade(context, true);
 		})
 	);
+	console.log("Now, testing liveshare api");
+	vsls.getApi().then((nullApi) => {
+		if (!nullApi) {
+			console.log('No LiveShare API');
+			return;
+		}
+		let api = nullApi;
+		
+		console.log('LiveShare API found');
+		function initialiseServer(session:vsls.Session) {
+			if (session.role == vsls.Role.Guest) {
+				trySendYade(context,"mayConnect", serverUrl);
+				return;
+			}
+			if (session.role == vsls.Role.Host) {
+				// launch YADE server
+				import('./server').then(() => {
+					console.log("alors");
+					api.shareServer(
+						{
+							port: 8080,
+							displayName: "YADE server",
+							browseUrl: serverUrl
+						}
+					);			
+					trySendYade(context,"mayConnect", serverUrl);
+				}, (err) => 
+					console.log(err)
+				).catch(err => console.log(err));
+				return;
+			}			
+		}
+		initialiseServer(api.session);
+		api.onDidChangeSession((e) => {
+			initialiseServer(e.session);	
+		});
+	});
 }
 
 // This method is called when your extension is deactivated

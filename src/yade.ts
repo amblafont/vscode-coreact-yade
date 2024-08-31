@@ -52,7 +52,6 @@ let coqEditor : vscode.TextEditor | undefined = undefined;
 export function launchYade(context:vscode.ExtensionContext, experimental = false):vscode.WebviewPanel {
 	if (yadePanel !== undefined)
 	   {return yadePanel;}
-
 	
   const panel = vscode.window.createWebviewPanel(
     'YADE',
@@ -242,8 +241,15 @@ function handleMsg(context:vscode.ExtensionContext,message:any) {
 }
 
 export function sendYade(context:vscode.ExtensionContext ,key:String, content:any) {
+  
+	launchYade(context);
+  trySendYade(context, key, content);
+}
+
+export function trySendYade(context:vscode.ExtensionContext, key:String, content:any) {
   let data = {key:key, content:content};
-	launchYade(context).webview.postMessage(data);
+  if (yadePanel !== undefined)
+    yadePanel.webview.postMessage(data);
 }
 
 export function setCoqEditor(editor:vscode.TextEditor) {
