@@ -70,7 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			if (session.role == vsls.Role.Host) {
 				// launch YADE server
-				import('./server').then(() => {
+				import('./server.js').then(() => {
 					console.log("alors");
 					api.shareServer(
 						{
