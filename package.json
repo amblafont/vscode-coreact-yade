@@ -2,7 +2,7 @@
   "name": "coreact-yade",
   "displayName": "coreact-yade",
   "description": "Support for the coreact-yade editor",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publisher": "amblafont",
   "engines": {
     "vscode": "^1.92.0"
@@ -50,7 +50,8 @@
     "check-types": "tsc --noEmit",
     "watch-web": "npm-run-all -p watch-web:*",
     "watch-web:esbuild": "node esbuild.js --watch",
-    "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json"
+    "watch-web:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
   },
   "devDependencies": {
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
