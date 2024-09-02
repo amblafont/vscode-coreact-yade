@@ -8,8 +8,8 @@ import {
 import { GoalRequest, GoalAnswer, PpString } from "./types";
 
 
-const relativeLinks = ["elm.js","js/katex.min.css.js",
-  "watcher.js",
+const relativeLinks = ["js/katex.min.css.js",
+  "js/elm.js","js/bundle.js",
 "js/katex-custom-element.js"
 ];
 
