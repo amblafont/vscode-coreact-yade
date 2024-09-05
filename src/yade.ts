@@ -13,7 +13,7 @@ const relativeLinks = ["js/katex.min.css.js",
 "js/katex-custom-element.js"
 ];
 
-const experimentalLink = "https://amblafont.github.io/graph-editor-experimental/";
+const experimentalLink = "https://amblafont.github.io/graph-editor/";
 // const experimentalLink = "http://localhost:8000/";
 
 

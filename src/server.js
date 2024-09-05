@@ -11,6 +11,18 @@ var queue = [];
 var nextId = 0;
 var lastBreakId = null;
 var lastSnapshot = null;
+function closeAll(reason) {
+    wss.clients.forEach(function (ws) {
+        closeConnection(ws, reason);
+    });
+}
+function restart() {
+    queue = [];
+    nextId = 0;
+    lastBreakId = null;
+    lastSnapshot = null;
+    console.log("Server restarted.");
+}
 function sendToClient(ws, data) {
     ws.send(JSON.stringify(data));
 }
@@ -38,8 +50,8 @@ function sendQueueSince(ws, expectedId) {
     if (depth > queue.length) {
         var clients = chooseSnapshotClient();
         if (clients.length == 0) {
-            var reason = "no updated client to get data from";
-            closeConnection(ws, reason);
+            var reason = "no updated client to get data from (server restarted)";
+            closeAll(reason);
             return false;
         }
         sendRequestSnapshot(clients);
@@ -143,6 +155,10 @@ wss.on('connection', function connection(ws) {
     console.log("new connection");
     // */
     ws.on('error', console.error);
+    ws.on('close', function close() {
+        if (wss.clients.size == 0)
+            restart();
+    });
     ws.on('message', function message(data, isBinary) {
         var str = data.toString();
         ;

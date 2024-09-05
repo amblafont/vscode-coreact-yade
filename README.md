@@ -31,7 +31,7 @@ None.
 
 ## Known Issues
 
-None.
+The experimental version of YADE does not work with vscode.dev because of https://github.com/microsoft/vscode/issues/72900.
 
 ## Release Notes
 

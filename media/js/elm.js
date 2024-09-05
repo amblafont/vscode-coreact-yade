@@ -5044,6 +5044,7 @@ var $elm$core$Result$isOk = function (result) {
 	}
 };
 var $elm$json$Json$Decode$andThen = _Json_andThen;
+var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $author$project$Modes$DefaultMode = {$: 'DefaultMode'};
 var $author$project$Msg$Standard = {$: 'Standard'};
 var $author$project$GraphDefs$coqProofTexCommand = 'coqproof';
@@ -5059,38 +5060,41 @@ var $elm_community$intdict$IntDict$Empty = {$: 'Empty'};
 var $elm_community$intdict$IntDict$empty = $elm_community$intdict$IntDict$Empty;
 var $author$project$Polygraph$empty = $author$project$Polygraph$Graph(
 	{graph: $elm_community$intdict$IntDict$empty, nextId: 0});
-var $author$project$Model$createModel = F2(
-	function (sizeGrid, rulerMargin) {
-		var g = $author$project$Polygraph$empty;
-		return {
-			alternativeLatex: false,
-			autoSave: true,
-			defaultGridSize: sizeGrid,
-			graphInfo: {
-				activeTabId: 0,
-				latexPreamble: '\\newcommand{\\' + ($author$project$GraphDefs$coqProofTexCommand + '}[1]{\\checkmark}'),
-				nextTabId: 1,
-				tabs: _List_fromArray(
-					[
-						{graph: g, id: 0, sizeGrid: sizeGrid, title: '1'}
-					])
-			},
-			hideGrid: false,
-			history: _List_Nil,
-			mode: $author$project$Modes$DefaultMode,
-			mouseOnCanvas: false,
-			mousePos: _Utils_Tuple2(0, 0),
-			nextModifId: 0,
-			rulerMargin: rulerMargin,
-			rulerShow: false,
-			scenario: $author$project$Msg$Standard,
-			showOverlayHelp: false,
-			specialKeys: {alt: false, ctrl: false, shift: false},
-			squareModeProof: false,
-			statusMsg: '',
-			topModifId: $author$project$Msg$defaultModifId
-		};
-	});
+var $author$project$Model$createModel = function (_v0) {
+	var defaultGridSize = _v0.defaultGridSize;
+	var rulerMargin = _v0.rulerMargin;
+	var saveLoadButtons = _v0.saveLoadButtons;
+	var g = $author$project$Polygraph$empty;
+	return {
+		alternativeLatex: false,
+		autoSave: true,
+		defaultGridSize: defaultGridSize,
+		graphInfo: {
+			activeTabId: 0,
+			latexPreamble: '\\newcommand{\\' + ($author$project$GraphDefs$coqProofTexCommand + '}[1]{\\checkmark}'),
+			nextTabId: 1,
+			tabs: _List_fromArray(
+				[
+					{graph: g, id: 0, sizeGrid: defaultGridSize, title: '1'}
+				])
+		},
+		hideGrid: false,
+		history: _List_Nil,
+		mode: $author$project$Modes$DefaultMode,
+		mouseOnCanvas: false,
+		mousePos: _Utils_Tuple2(0, 0),
+		nextModifId: 0,
+		rulerMargin: rulerMargin,
+		rulerShow: false,
+		saveLoadButtons: saveLoadButtons,
+		scenario: $author$project$Msg$Standard,
+		showOverlayHelp: false,
+		specialKeys: {alt: false, ctrl: false, shift: false},
+		squareModeProof: false,
+		statusMsg: '',
+		topModifId: $author$project$Msg$defaultModifId
+	};
+};
 var $elm$json$Json$Decode$map = _Json_map1;
 var $elm$json$Json$Decode$map2 = _Json_map2;
 var $elm$json$Json$Decode$succeed = _Json_succeed;
@@ -6925,19 +6929,33 @@ var $author$project$Format$Version14$Edge = F4(
 	function (label, style, kind, zindex) {
 		return {kind: kind, label: label, style: style, zindex: zindex};
 	});
-var $author$project$Format$Version14$ArrowStyle = F8(
-	function (tail, head, kind, dashed, bend, alignment, position, color) {
-		return {alignment: alignment, bend: bend, color: color, dashed: dashed, head: head, kind: kind, position: position, tail: tail};
-	});
-var $author$project$Format$Version14$emptyArrowStyle = A8($author$project$Format$Version14$ArrowStyle, '', '', 'normal', false, 0, '', 0, 'black');
-var $author$project$Format$Version14$pullshoutKey = 'pullshout';
-var $author$project$Format$Version14$pullshoutEdge = function (z) {
-	return A4($author$project$Format$Version14$Edge, '', $author$project$Format$Version14$emptyArrowStyle, $author$project$Format$Version14$pullshoutKey, z);
+var $author$project$Format$Version14$emptyArrowStyle = function (color) {
+	return {
+		alignment: '',
+		bend: 0,
+		color: A2($author$project$Codec$encoder, $author$project$Drawing$Color$codec, color),
+		dashed: false,
+		head: '',
+		kind: 'normal',
+		position: 0,
+		tail: ''
+	};
 };
+var $author$project$Format$Version14$pullshoutKey = 'pullshout';
+var $author$project$Format$Version14$pullshoutEdge = F2(
+	function (z, color) {
+		return A4(
+			$author$project$Format$Version14$Edge,
+			'',
+			$author$project$Format$Version14$emptyArrowStyle(color),
+			$author$project$Format$Version14$pullshoutKey,
+			z);
+	});
 var $author$project$Format$Version14$fromEdgeLabel = function (e) {
 	var _v0 = e.details;
 	if (_v0.$ === 'PullshoutEdge') {
-		return $author$project$Format$Version14$pullshoutEdge(e.zindex);
+		var color = _v0.a.color;
+		return A2($author$project$Format$Version14$pullshoutEdge, e.zindex, color);
 	} else {
 		var l = _v0.a;
 		var label = l.label;
@@ -6954,14 +6972,19 @@ var $author$project$Format$Version14$fromEdgeLabel = function (e) {
 var $author$project$GraphDefs$NormalEdge = function (a) {
 	return {$: 'NormalEdge', a: a};
 };
-var $author$project$GraphDefs$PullshoutEdge = {$: 'PullshoutEdge'};
+var $author$project$GraphDefs$PullshoutEdge = function (a) {
+	return {$: 'PullshoutEdge', a: a};
+};
 var $author$project$Format$Version14$toEdgeLabel = function (_v0) {
 	var label = _v0.label;
 	var style = _v0.style;
 	var kind = _v0.kind;
 	var zindex = _v0.zindex;
 	return {
-		details: _Utils_eq(kind, $author$project$Format$Version14$pullshoutKey) ? $author$project$GraphDefs$PullshoutEdge : $author$project$GraphDefs$NormalEdge(
+		details: _Utils_eq(kind, $author$project$Format$Version14$pullshoutKey) ? $author$project$GraphDefs$PullshoutEdge(
+			{
+				color: A2($author$project$Codec$decoder, $author$project$Drawing$Color$codec, style.color)
+			}) : $author$project$GraphDefs$NormalEdge(
 			{
 				dims: $elm$core$Maybe$Nothing,
 				isAdjunction: _Utils_eq(kind, $author$project$Format$Version14$adjunctionKey),
@@ -7747,7 +7770,6 @@ var $author$project$HtmlDefs$keyDecoder = A2(
 	$elm$json$Json$Decode$map,
 	$author$project$HtmlDefs$toKey,
 	A2($elm$json$Json$Decode$field, 'key', $elm$json$Json$Decode$string));
-var $elm$json$Json$Decode$bool = _Json_decodeBool;
 var $elm$json$Json$Decode$map3 = _Json_map3;
 var $author$project$HtmlDefs$keysDecoder = A4(
 	$elm$json$Json$Decode$map3,
@@ -15693,8 +15715,12 @@ var $author$project$Model$clearHistory = function (m) {
 		m,
 		{history: _List_Nil, nextModifId: 0, topModifId: $author$project$Msg$defaultModifId});
 };
+var $author$project$Model$modelToFlag = function (m) {
+	return {defaultGridSize: m.defaultGridSize, rulerMargin: m.rulerMargin, saveLoadButtons: m.saveLoadButtons};
+};
 var $author$project$Model$clearModel = function (m) {
-	return A2($author$project$Model$createModel, m.defaultGridSize, m.rulerMargin);
+	return $author$project$Model$createModel(
+		$author$project$Model$modelToFlag(m));
 };
 var $author$project$Model$activateFirstTab = function (m) {
 	return A2(
@@ -15716,10 +15742,6 @@ var $author$project$Model$activateFirstTab = function (m) {
 var $author$project$Modes$ColorMode = function (a) {
 	return {$: 'ColorMode', a: a};
 };
-var $author$project$GraphDefs$isPullshout = function (e) {
-	return _Utils_eq(e.details, $author$project$GraphDefs$PullshoutEdge);
-};
-var $author$project$GraphDefs$isNormal = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$GraphDefs$isPullshout);
 var $author$project$GraphDefs$isTrueSelection = function (g) {
 	return A3(
 		$author$project$Polygraph$any,
@@ -15756,15 +15778,7 @@ var $author$project$Modes$Color$initialise = function (model) {
 		function ($) {
 			return $.id;
 		},
-		A2(
-			$elm$core$List$filter,
-			A2(
-				$elm$core$Basics$composeR,
-				function ($) {
-					return $.label;
-				},
-				$author$project$GraphDefs$isNormal),
-			$author$project$GraphDefs$selectedEdges(modelGraph)));
+		$author$project$GraphDefs$selectedEdges(modelGraph));
 	return _Utils_eq(ids, _List_Nil) ? _Utils_update(
 		model,
 		{mode: $author$project$Modes$DefaultMode}) : _Utils_update(
@@ -19374,7 +19388,7 @@ var $author$project$ArrowStyle$tikzStyle = function (stl) {
 				} else {
 					var hd = _v0.a;
 					var _v3 = _v0.b;
-					return $author$project$ArrowStyle$headTikzStyle(hd) + 'cell=0, ';
+					return $author$project$ArrowStyle$headTikzStyle(hd) + 'cell=0.05, ';
 				}
 			case 'NormalArrow':
 				var hd = _v0.a;
@@ -19462,8 +19476,19 @@ var $author$project$Tikz$encodeNodeTikZ = F2(
 			coord(x)) + ('em, ' + ($elm$core$String$fromFloat(
 			0 - coord(y)) + ('em) {' + ((n.label.isMath ? ('$' + (label + '$')) : label) + '} ; \n')))))));
 	});
+var $author$project$GraphDefs$getEdgeColor = function (e) {
+	var _v0 = e.details;
+	if (_v0.$ === 'PullshoutEdge') {
+		var color = _v0.a.color;
+		return color;
+	} else {
+		var l = _v0.a;
+		return l.style.color;
+	}
+};
 var $author$project$Tikz$encodePullshoutTikZ = F2(
 	function (g, e) {
+		var color = $author$project$GraphDefs$getEdgeColor(e.label);
 		var _v0 = _Utils_Tuple2(
 			A2($author$project$Polygraph$getEdge, e.from, g),
 			A2($author$project$Polygraph$getEdge, e.to, g));
@@ -19480,7 +19505,7 @@ var $author$project$Tikz$encodePullshoutTikZ = F2(
 			var a = _v1.a;
 			var b = _v1.b;
 			var c = _v1.c;
-			return '\\pullbackk{' + (a + ('}{' + (b + ('}{' + (c + '}{draw} % \n')))));
+			return '\\pullbackk{' + (a + ('}{' + (b + ('}{' + (c + ('}{draw,' + ($author$project$Drawing$Color$toString(color) + '} % \n')))))));
 		} else {
 			return 'raté!';
 		}
@@ -19751,7 +19776,6 @@ var $author$project$GraphDrawing$activityToEdgeClasses = function (a) {
 			return _List_Nil;
 	}
 };
-var $author$project$Drawing$Color$black = $author$project$Drawing$Color$Black;
 var $elm$virtual_dom$VirtualDom$attribute = F2(
 	function (key, value) {
 		return A2(
@@ -19951,14 +19975,15 @@ var $author$project$Drawing$polyLine = F2(
 		return $author$project$Drawing$group(
 			_Utils_ap(shadow, normal));
 	});
-var $author$project$GraphDrawing$drawHat = F4(
-	function (edgeId, a, z, hat) {
+var $author$project$GraphDrawing$drawHat = F5(
+	function (edgeId, a, z, _v0, hat) {
+		var color = _v0.color;
 		var classes = $author$project$GraphDrawing$class(
 			$author$project$GraphDrawing$activityToEdgeClasses(a));
 		return A2(
 			$author$project$Drawing$polyLine,
 			{
-				color: $author$project$Drawing$Color$black,
+				color: color,
 				points: _List_fromArray(
 					[hat.p1, hat.summit, hat.p2]),
 				zindex: z
@@ -20998,9 +21023,9 @@ var $author$project$GraphDrawing$graphDrawing = F2(
 				while (true) {
 					if (_v0.a.$ === 'PullshoutEdge') {
 						if (_v0.b.$ === 'HatShape') {
-							var _v1 = _v0.a;
+							var pullshoutStyle = _v0.a.a;
 							var hat = _v0.b.a;
-							return A4($author$project$GraphDrawing$drawHat, id, e.isActive, e.zindex, hat);
+							return A5($author$project$GraphDrawing$drawHat, id, e.isActive, e.zindex, pullshoutStyle, hat);
 						} else {
 							break _v0$2;
 						}
@@ -21063,7 +21088,9 @@ var $author$project$GraphDrawing$WeakActive = {$: 'WeakActive'};
 var $author$project$GraphDrawing$NormalEdge = function (a) {
 	return {$: 'NormalEdge', a: a};
 };
-var $author$project$GraphDrawing$PullshoutEdge = {$: 'PullshoutEdge'};
+var $author$project$GraphDrawing$PullshoutEdge = function (a) {
+	return {$: 'PullshoutEdge', a: a};
+};
 var $author$project$GraphDefs$getEdgeDims = function (n) {
 	var _v0 = n.dims;
 	if (_v0.$ === 'Nothing') {
@@ -21082,7 +21109,8 @@ var $author$project$GraphDrawing$make_edgeDrawingLabel = F2(
 			details: function () {
 				var _v1 = e.details;
 				if (_v1.$ === 'PullshoutEdge') {
-					return $author$project$GraphDrawing$PullshoutEdge;
+					var x = _v1.a;
+					return $author$project$GraphDrawing$PullshoutEdge(x);
 				} else {
 					var l = _v1.a;
 					var label = l.label;
@@ -22862,7 +22890,7 @@ var $author$project$Main$checkMakeSave = function (model) {
 var $author$project$GraphDefs$mapEdgeType = F2(
 	function (f, e) {
 		if (e.$ === 'PullshoutEdge') {
-			return $author$project$GraphDefs$PullshoutEdge;
+			return e;
 		} else {
 			var l = e.a;
 			return $author$project$GraphDefs$NormalEdge(
@@ -23826,6 +23854,7 @@ var $author$project$QuickInput$equalityParser = A2(
 				$elm$parser$Parser$symbol('=')),
 			$elm$parser$Parser$spaces)),
 	$author$project$QuickInput$handSideParser);
+var $author$project$Drawing$Color$black = $author$project$Drawing$Color$Black;
 var $author$project$ArrowStyle$empty = {bend: 0, color: $author$project$Drawing$Color$black, dashed: false, head: $author$project$ArrowStyle$DefaultHead, kind: $author$project$ArrowStyle$NormalArrow, labelAlignment: $author$project$Geometry$Left, labelPosition: 0.5, tail: $author$project$ArrowStyle$DefaultTail};
 var $author$project$Polygraph$md_graph = function (_v0) {
 	var graph = _v0.a.graph;
@@ -24202,30 +24231,6 @@ var $author$project$Main$setFirstTabEquationPerform = F2(
 				$author$project$HtmlDefs$computeLayout(_Utils_Tuple0));
 		}
 	});
-var $author$project$IntDictExtra$getList = F2(
-	function (l, d) {
-		var d2 = A2($elm_community$intdict$IntDict$map, $elm$core$Tuple$pair, d);
-		return A2(
-			$elm$core$List$filterMap,
-			function (i) {
-				return A2($elm_community$intdict$IntDict$get, i, d2);
-			},
-			l);
-	});
-var $author$project$Polygraph$getEdges = F2(
-	function (l, g) {
-		return A2(
-			$elm$core$List$filterMap,
-			function (_v0) {
-				var id = _v0.a;
-				var e = _v0.b;
-				return A2($author$project$Polygraph$objEdge, id, e);
-			},
-			A2(
-				$author$project$IntDictExtra$getList,
-				l,
-				$author$project$Polygraph$graphRep(g)));
-	});
 var $author$project$Drawing$Color$fromChar = function (s) {
 	switch (s.valueOf()) {
 		case 'r':
@@ -24246,23 +24251,6 @@ var $author$project$Drawing$Color$fromChar = function (s) {
 			return $elm$core$Maybe$Nothing;
 	}
 };
-var $author$project$ArrowStyle$keyMaybeUpdateColor = F2(
-	function (k, style) {
-		if (k.$ === 'Character') {
-			var c = k.a;
-			return A2(
-				$elm$core$Maybe$andThen,
-				function (color) {
-					return _Utils_eq(color, style.color) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
-						_Utils_update(
-							style,
-							{color: color}));
-				},
-				$author$project$Drawing$Color$fromChar(c));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
 var $author$project$Polygraph$md_graphMap = F2(
 	function (f, _v0) {
 		var m = _v0.a;
@@ -24289,55 +24277,65 @@ var $author$project$Polygraph$md_updateEdge = F2(
 					};
 				}));
 	});
-var $author$project$GraphDefs$md_updateNormalEdge = F2(
-	function (id, f) {
-		return A2(
-			$author$project$Polygraph$md_updateEdge,
-			id,
-			$author$project$GraphDefs$mapNormalEdge(f));
+var $author$project$Polygraph$md_updateEdgesId = F3(
+	function (l, f, g) {
+		return A3(
+			$elm$core$List$foldl,
+			F2(
+				function (id, g2) {
+					return A3($author$project$Polygraph$md_updateEdge, id, f, g2);
+				}),
+			g,
+			l);
 	});
-var $author$project$GraphDefs$updateStyleEdges = F3(
-	function (update, edges, g) {
-		var updateStyle = function (e) {
-			return A2(
-				$elm$core$Maybe$map,
-				function (newStyle) {
-					return {id: e.id, style: newStyle};
-				},
-				update(e.label.details.style));
+var $author$project$GraphDefs$setColorEdgesId = F3(
+	function (color, edges, graph) {
+		var updateColor = function (e) {
+			var _v0 = e.details;
+			if (_v0.$ === 'NormalEdge') {
+				var l = _v0.a;
+				var oldStyle = l.style;
+				return _Utils_update(
+					e,
+					{
+						details: $author$project$GraphDefs$NormalEdge(
+							_Utils_update(
+								l,
+								{
+									style: _Utils_update(
+										oldStyle,
+										{color: color})
+								}))
+					});
+			} else {
+				var x = _v0.a;
+				return _Utils_update(
+					e,
+					{
+						details: $author$project$GraphDefs$PullshoutEdge(
+							_Utils_update(
+								x,
+								{color: color}))
+					});
+			}
 		};
-		var newEdges = A2(
-			$elm$core$List$filterMap,
-			updateStyle,
-			A2($elm$core$List$filterMap, $author$project$GraphDefs$filterEdgeNormal, edges));
-		var updateEdge = F2(
-			function (edge, graph) {
-				return A3(
-					$author$project$GraphDefs$md_updateNormalEdge,
-					edge.id,
-					function (e) {
-						return _Utils_update(
-							e,
-							{style: edge.style});
-					},
-					graph);
-			});
-		var modif = $author$project$Polygraph$newModif(g);
-		if (_Utils_eq(newEdges, _List_Nil)) {
-			return modif;
-		} else {
-			var newGraph = A3($elm$core$List$foldl, updateEdge, modif, newEdges);
-			return newGraph;
-		}
+		var modif = $author$project$Polygraph$newModif(graph);
+		return A3($author$project$Polygraph$md_updateEdgesId, edges, updateColor, modif);
 	});
-var $author$project$Model$returnUpdateStyle = F3(
-	function (updateStyle, model, edges) {
-		var modifHelper = A3(
-			$author$project$GraphDefs$updateStyleEdges,
-			updateStyle,
-			edges,
-			$author$project$Model$getActiveGraph(model));
-		return modifHelper;
+var $author$project$Model$returnSetColor = F3(
+	function (colorOption, model, ids) {
+		if (colorOption.$ === 'Nothing') {
+			return $author$project$Polygraph$newModif(
+				$author$project$Model$getActiveGraph(model));
+		} else {
+			var color = colorOption.a;
+			var modifHelper = A3(
+				$author$project$GraphDefs$setColorEdgesId,
+				color,
+				ids,
+				$author$project$Model$getActiveGraph(model));
+			return modifHelper;
+		}
 	});
 var $author$project$Model$switch_Default = function (m) {
 	return $author$project$Model$noCmd(
@@ -24381,40 +24379,40 @@ var $author$project$CommandCodec$updateModifHelper = F2(
 	});
 var $author$project$Modes$Color$update = F3(
 	function (ids, msg, model) {
-		_v0$2:
+		_v0$3:
 		while (true) {
 			if ((msg.$ === 'KeyChanged') && (!msg.a)) {
-				if (msg.c.$ === 'Character') {
+				if (msg.c.$ === 'Control') {
+					if (msg.c.a === 'Escape') {
+						return $author$project$Model$switch_Default(model);
+					} else {
+						break _v0$3;
+					}
+				} else {
 					if ('?' === msg.c.a.valueOf()) {
 						return $author$project$Model$noCmd(
 							$author$project$Model$toggleHelpOverlay(model));
 					} else {
-						break _v0$2;
-					}
-				} else {
-					if (msg.c.a === 'Escape') {
-						return $author$project$Model$switch_Default(model);
-					} else {
-						break _v0$2;
+						var c = msg.c.a;
+						var modelGraph = $author$project$Model$getActiveGraph(model);
+						var modifHelper = A3(
+							$author$project$Model$returnSetColor,
+							$author$project$Drawing$Color$fromChar(c),
+							model,
+							ids);
+						return A2(
+							$author$project$CommandCodec$updateModifHelper,
+							_Utils_update(
+								model,
+								{mode: $author$project$Modes$DefaultMode}),
+							modifHelper);
 					}
 				}
 			} else {
-				return $author$project$Model$noCmd(model);
+				break _v0$3;
 			}
 		}
-		var k = msg.c;
-		var modelGraph = $author$project$Model$getActiveGraph(model);
-		var modifHelper = A3(
-			$author$project$Model$returnUpdateStyle,
-			$author$project$ArrowStyle$keyMaybeUpdateColor(k),
-			model,
-			A2($author$project$Polygraph$getEdges, ids, modelGraph));
-		return A2(
-			$author$project$CommandCodec$updateModifHelper,
-			_Utils_update(
-				model,
-				{mode: $author$project$Modes$DefaultMode}),
-			modifHelper);
+		return $author$project$Model$noCmd(model);
 	});
 var $author$project$GraphDefs$edgeToNodeLabel = F2(
 	function (pos, l) {
@@ -25419,6 +25417,14 @@ var $author$project$Polygraph$incomings = F2(
 			},
 			$author$project$Polygraph$edges(g));
 	});
+var $author$project$GraphDefs$isPullshout = function (e) {
+	var _v0 = e.details;
+	if (_v0.$ === 'PullshoutEdge') {
+		return true;
+	} else {
+		return false;
+	}
+};
 var $elm_community$list_extra$List$Extra$notMember = function (x) {
 	return A2(
 		$elm$core$Basics$composeL,
@@ -25492,11 +25498,34 @@ var $author$project$Modes$Pullshout$initialise = F3(
 			var t = _v0.a;
 			var q = _v0.b;
 			return $elm$core$Maybe$Just(
-				{chosenEdge: id, currentDest: t, kind: k, possibilities: q});
+				{chosenEdge: id, color: $author$project$Drawing$Color$black, currentDest: t, kind: k, possibilities: q});
 		} else {
 			return $elm$core$Maybe$Nothing;
 		}
 	});
+var $author$project$ArrowStyle$keyMaybeUpdateColor = F2(
+	function (k, style) {
+		if (k.$ === 'Character') {
+			var c = k.a;
+			return A2(
+				$elm$core$Maybe$andThen,
+				function (color) {
+					return _Utils_eq(color, style.color) ? $elm$core$Maybe$Nothing : $elm$core$Maybe$Just(
+						_Utils_update(
+							style,
+							{color: color}));
+				},
+				$author$project$Drawing$Color$fromChar(c));
+		} else {
+			return $elm$core$Maybe$Nothing;
+		}
+	});
+var $author$project$ArrowStyle$decreaseBend = function (b) {
+	return b - 0.1;
+};
+var $author$project$ArrowStyle$increaseBend = function (b) {
+	return b + 0.1;
+};
 var $author$project$ArrowStyle$maxLabelPosition = 0.9;
 var $author$project$ArrowStyle$minLabelPosition = 0.1;
 var $author$project$Geometry$Epsilon$norm0 = function (x) {
@@ -25625,14 +25654,16 @@ var $author$project$ArrowStyle$keyMaybeUpdateStyle = F2(
 							_Utils_update(
 								style,
 								{
-									bend: $author$project$Geometry$Epsilon$norm0(style.bend + 0.1)
+									bend: $author$project$Geometry$Epsilon$norm0(
+										$author$project$ArrowStyle$decreaseBend(style.bend))
 								}));
 					case 'B':
 						return $elm$core$Maybe$Just(
 							_Utils_update(
 								style,
 								{
-									bend: $author$project$Geometry$Epsilon$norm0(style.bend - 0.1)
+									bend: $author$project$Geometry$Epsilon$norm0(
+										$author$project$ArrowStyle$increaseBend(style.bend))
 								}));
 					case 'A':
 						return $elm$core$Maybe$Just(
@@ -25980,12 +26011,17 @@ var $author$project$Modes$NewArrow$update = F3(
 		return $author$project$Model$noCmd(
 			A2($author$project$Modes$NewArrow$updateState, model, st3));
 	});
-var $author$project$ArrowStyle$simpleLineStyle = {bend: 0, color: $author$project$Drawing$Color$black, dashed: false, head: $author$project$ArrowStyle$NoHead, kind: $author$project$ArrowStyle$NormalArrow, labelAlignment: $author$project$Geometry$Left, labelPosition: 0.5, tail: $author$project$ArrowStyle$DefaultTail};
+var $author$project$Modes$NewLine = function (a) {
+	return {$: 'NewLine', a: a};
+};
+var $author$project$ArrowStyle$simpleLineStyle = function (bend) {
+	return {bend: bend, color: $author$project$Drawing$Color$black, dashed: false, head: $author$project$ArrowStyle$NoHead, kind: $author$project$ArrowStyle$NormalArrow, labelAlignment: $author$project$Geometry$Left, labelPosition: 0.5, tail: $author$project$ArrowStyle$DefaultTail};
+};
 var $author$project$Modes$NewLine$makeGraph = F2(
 	function (m, s) {
 		var graph = $author$project$Polygraph$newModif(
 			$author$project$Model$getActiveGraph(m));
-		var style = $author$project$ArrowStyle$simpleLineStyle;
+		var style = $author$project$ArrowStyle$simpleLineStyle(s.bend);
 		var edgeLabel = A2($author$project$GraphDefs$newEdgeLabel, '', style);
 		var nodeLabel = A4($author$project$GraphDefs$newNodeLabel, s.initialPos, ' ', true, $author$project$Zindex$defaultZ);
 		var newNodeLabel = _Utils_update(
@@ -26015,7 +26051,15 @@ var $author$project$Modes$NewLine$update = F3(
 				newModel,
 				A2($author$project$Modes$NewLine$makeGraph, newModel, state));
 		};
-		_v0$4:
+		var updState = function (s) {
+			return $author$project$Model$noCmd(
+				_Utils_update(
+					model,
+					{
+						mode: $author$project$Modes$NewLine(s)
+					}));
+		};
+		_v0$6:
 		while (true) {
 			switch (msg.$) {
 				case 'MouseClick':
@@ -26026,7 +26070,7 @@ var $author$project$Modes$NewLine$update = F3(
 							if (msg.c.a === 'Escape') {
 								return $author$project$Model$switch_Default(model);
 							} else {
-								break _v0$4;
+								break _v0$6;
 							}
 						} else {
 							switch (msg.c.a.valueOf()) {
@@ -26035,20 +26079,38 @@ var $author$project$Modes$NewLine$update = F3(
 										$author$project$Model$toggleHelpOverlay(model));
 								case 'n':
 									return finalise(_Utils_Tuple0);
+								case 'b':
+									return updState(
+										_Utils_update(
+											state,
+											{
+												bend: $author$project$ArrowStyle$decreaseBend(state.bend)
+											}));
+								case 'B':
+									return updState(
+										_Utils_update(
+											state,
+											{
+												bend: $author$project$ArrowStyle$increaseBend(state.bend)
+											}));
 								default:
-									break _v0$4;
+									break _v0$6;
 							}
 						}
 					} else {
-						break _v0$4;
+						break _v0$6;
 					}
 				default:
-					break _v0$4;
+					break _v0$6;
 			}
 		}
 		return $author$project$Model$noCmd(model);
 	});
-var $author$project$GraphDefs$newPullshout = $author$project$GraphDefs$newGenericLabel($author$project$GraphDefs$PullshoutEdge);
+var $author$project$GraphDefs$newPullshout = function (color) {
+	return $author$project$GraphDefs$newGenericLabel(
+		$author$project$GraphDefs$PullshoutEdge(
+			{color: color}));
+};
 var $author$project$Modes$Pullshout$graph = F2(
 	function (m, s) {
 		return A4(
@@ -26057,7 +26119,7 @@ var $author$project$Modes$Pullshout$graph = F2(
 				$author$project$Model$getActiveGraph(m)),
 			s.chosenEdge,
 			s.currentDest,
-			$author$project$GraphDefs$newPullshout).a;
+			$author$project$GraphDefs$newPullshout(s.color)).a;
 	});
 var $author$project$Modes$Pullshout$nextPullshout = F3(
 	function (m, k, st) {
@@ -26101,10 +26163,24 @@ var $author$project$Modes$Pullshout$update = F3(
 					mode: $author$project$Modes$PullshoutMode(st)
 				});
 		};
-		_v0$5:
+		_v0$6:
 		while (true) {
 			if ((msg.$ === 'KeyChanged') && (!msg.a)) {
-				if (msg.c.$ === 'Character') {
+				if (msg.c.$ === 'Control') {
+					switch (msg.c.a) {
+						case 'Escape':
+							return $author$project$Model$switch_Default(model);
+						case 'Enter':
+							return A2(
+								$author$project$CommandCodec$updateModifHelper,
+								_Utils_update(
+									model,
+									{mode: $author$project$Modes$DefaultMode}),
+								A2($author$project$Modes$Pullshout$graph, model, state));
+						default:
+							break _v0$6;
+					}
+				} else {
 					switch (msg.c.a.valueOf()) {
 						case '?':
 							return $author$project$Model$noCmd(
@@ -26118,25 +26194,22 @@ var $author$project$Modes$Pullshout$update = F3(
 								updateState(
 									A3($author$project$Modes$Pullshout$nextPullshout, model, $author$project$Modes$Pushout, state)));
 						default:
-							break _v0$5;
-					}
-				} else {
-					switch (msg.c.a) {
-						case 'Escape':
-							return $author$project$Model$switch_Default(model);
-						case 'Enter':
-							return A2(
-								$author$project$CommandCodec$updateModifHelper,
-								_Utils_update(
-									model,
-									{mode: $author$project$Modes$DefaultMode}),
-								A2($author$project$Modes$Pullshout$graph, model, state));
-						default:
-							break _v0$5;
+							var c = msg.c.a;
+							var _v1 = $author$project$Drawing$Color$fromChar(c);
+							if (_v1.$ === 'Nothing') {
+								return $author$project$Model$noCmd(model);
+							} else {
+								var col = _v1.a;
+								return $author$project$Model$noCmd(
+									updateState(
+										_Utils_update(
+											state,
+											{color: col})));
+							}
 					}
 				}
 			} else {
-				break _v0$5;
+				break _v0$6;
 			}
 		}
 		return $author$project$Model$noCmd(model);
@@ -26322,6 +26395,16 @@ var $author$project$Modes$SplitArrow = function (a) {
 	return {$: 'SplitArrow', a: a};
 };
 var $author$project$GraphDefs$emptyEdge = A2($author$project$GraphDefs$newEdgeLabel, '', $author$project$ArrowStyle$empty);
+var $author$project$IntDictExtra$getList = F2(
+	function (l, d) {
+		var d2 = A2($elm_community$intdict$IntDict$map, $elm$core$Tuple$pair, d);
+		return A2(
+			$elm$core$List$filterMap,
+			function (i) {
+				return A2($elm_community$intdict$IntDict$get, i, d2);
+			},
+			l);
+	});
 var $author$project$Polygraph$getNodes = F2(
 	function (l, g) {
 		return A2(
@@ -28324,6 +28407,20 @@ var $author$project$GraphProof$isEmptyBranch = function (l) {
 		return $elm$core$Maybe$Nothing;
 	}
 };
+var $author$project$Polygraph$getEdges = F2(
+	function (l, g) {
+		return A2(
+			$elm$core$List$filterMap,
+			function (_v0) {
+				var id = _v0.a;
+				var e = _v0.b;
+				return A2($author$project$Polygraph$objEdge, id, e);
+			},
+			A2(
+				$author$project$IntDictExtra$getList,
+				l,
+				$author$project$Polygraph$graphRep(g)));
+	});
 var $author$project$GraphProof$angleDir = F2(
 	function (dir, edge) {
 		return dir ? edge.angleIn : edge.angleOut;
@@ -28666,6 +28763,7 @@ var $author$project$Modes$CutHead$initialise = function (model) {
 var $author$project$Modes$CreateArrow = function (a) {
 	return {$: 'CreateArrow', a: a};
 };
+var $author$project$GraphDefs$isNormal = A2($elm$core$Basics$composeL, $elm$core$Basics$not, $author$project$GraphDefs$isPullshout);
 var $author$project$GraphDefs$isNormalId = F2(
 	function (g, id) {
 		return A2(
@@ -28721,16 +28819,13 @@ var $author$project$Modes$NewArrow$initialise = function (m) {
 		m,
 		{chosen: $author$project$Polygraph$empty, inverted: false, isAdjunction: false, mode: mode, pos: $author$project$InputPosition$InputPosMouse, style: $author$project$ArrowStyle$empty});
 };
-var $author$project$Modes$NewLine = function (a) {
-	return {$: 'NewLine', a: a};
-};
 var $author$project$Modes$NewLine$initialise = function (m) {
 	return $author$project$Model$noCmd(
 		_Utils_update(
 			m,
 			{
 				mode: $author$project$Modes$NewLine(
-					{initialPos: m.mousePos})
+					{bend: 0, initialPos: m.mousePos})
 			}));
 };
 var $author$project$GraphDefs$selectedEdgeId = A2(
@@ -29062,6 +29157,56 @@ var $author$project$Model$restrictSelection = function (model) {
 				})
 		});
 };
+var $author$project$GraphDefs$md_updateNormalEdge = F2(
+	function (id, f) {
+		return A2(
+			$author$project$Polygraph$md_updateEdge,
+			id,
+			$author$project$GraphDefs$mapNormalEdge(f));
+	});
+var $author$project$GraphDefs$updateStyleEdges = F3(
+	function (update, edges, g) {
+		var updateStyle = function (e) {
+			return A2(
+				$elm$core$Maybe$map,
+				function (newStyle) {
+					return {id: e.id, style: newStyle};
+				},
+				update(e.label.details.style));
+		};
+		var newEdges = A2(
+			$elm$core$List$filterMap,
+			updateStyle,
+			A2($elm$core$List$filterMap, $author$project$GraphDefs$filterEdgeNormal, edges));
+		var updateEdge = F2(
+			function (edge, graph) {
+				return A3(
+					$author$project$GraphDefs$md_updateNormalEdge,
+					edge.id,
+					function (e) {
+						return _Utils_update(
+							e,
+							{style: edge.style});
+					},
+					graph);
+			});
+		var modif = $author$project$Polygraph$newModif(g);
+		if (_Utils_eq(newEdges, _List_Nil)) {
+			return modif;
+		} else {
+			var newGraph = A3($elm$core$List$foldl, updateEdge, modif, newEdges);
+			return newGraph;
+		}
+	});
+var $author$project$Model$returnUpdateStyle = F3(
+	function (updateStyle, model, edges) {
+		var modifHelper = A3(
+			$author$project$GraphDefs$updateStyleEdges,
+			updateStyle,
+			edges,
+			$author$project$Model$getActiveGraph(model));
+		return modifHelper;
+	});
 var $author$project$GraphDefs$addNodesSelection = F2(
 	function (g, f) {
 		return A5(
@@ -31035,7 +31180,8 @@ var $author$project$GraphDrawing$mapNormalEdge = F2(
 			details: function () {
 				var _v0 = e.details;
 				if (_v0.$ === 'PullshoutEdge') {
-					return $author$project$GraphDrawing$PullshoutEdge;
+					var x = _v0.a;
+					return $author$project$GraphDrawing$PullshoutEdge(x);
 				} else {
 					var l = _v0.a;
 					return $author$project$GraphDrawing$NormalEdge(
@@ -31280,8 +31426,8 @@ var $author$project$Modes$Move$help = function (s) {
 };
 var $author$project$Drawing$Color$helpMsg = 'bla[c]k, bl[u]e, [g]reen, [o]range, [r]ed, [v]iolet, [y]ellow';
 var $author$project$Modes$NewArrow$help = $author$project$HtmlDefs$overlayHelpMsg + (', [ESC] cancel, [click, TAB] name the point (if new) and arrow, ' + ('[hjkl] position the new point with the keyboard ' + ('([f] to move by a multiple of the grid size), ' + ('[ctrl] merge, [a] merge without renaming, ' + ('[RET] terminate the arrow creation, ' + ('[\"' + ($author$project$ArrowStyle$controlChars + ('\"] alternate between different arrow styles, ' + ('[i]nvert arrow, ' + ('create a[d]junction arrow, ' + ('[p]ullback/[P]ushout mode, ' + ('[C] switch to cone/cylinder creation (if relevant).\n' + ('[p]ullback/[P]ushout mode.\n' + ('Colors: ' + $author$project$Drawing$Color$helpMsg))))))))))))));
-var $author$project$Modes$NewLine$help = $author$project$HtmlDefs$overlayHelpMsg + ', [ESC] cancel, [click, n] to finalise, ';
-var $author$project$Modes$Pullshout$help = '[ESC] cancel, ' + ($author$project$HtmlDefs$overlayHelpMsg + (', cycle between [p]ullback/[P]ushout possibilities, ' + '[RET] confirm'));
+var $author$project$Modes$NewLine$help = $author$project$HtmlDefs$overlayHelpMsg + ', [ESC] cancel, [click, n] to finalise, [bB] change bend';
+var $author$project$Modes$Pullshout$help = '[ESC] cancel, ' + ($author$project$HtmlDefs$overlayHelpMsg + (', cycle between [p]ullback/[P]ushout possibilities, ' + ($author$project$Drawing$Color$helpMsg + ', [RET] confirm')));
 var $author$project$Modes$Rename$help = 'Rename mode: [RET] to confirm, [TAB] to next label, [ESC] to cancel';
 var $author$project$Modes$SplitArrow$help = '[ESC] cancel, ' + ($author$project$HtmlDefs$overlayHelpMsg + (', [click] name the point (if new), ' + ('[/] to move the existing label on the other edge, ' + '[RET] terminate the square creation')));
 var $author$project$Modes$Square$help = $author$project$HtmlDefs$overlayHelpMsg + (', [ESC] cancel' + ('[click] name the point (if new), ' + ('[RET] terminate the square creation, ' + (' alternative possible [s]quares, ' + (' [a]lternative possible labels, ' + 'toggle [p]roof node creation.')))));
@@ -34790,7 +34936,7 @@ var $author$project$HtmlDefs$textHtml = function (t) {
 		return _List_Nil;
 	}
 };
-var $author$project$HtmlDefs$introHtml = $author$project$HtmlDefs$textHtml('\n   <p>\n            A vi-inspired diagram editor, with              \n            (latex) labelled nodes and edges, tested with Firefox, written in <a href="https://elm-lang.org/">Elm</a> (see the code on \n        <a href="https://github.com/amblafont/graph-editor-web">github</a>).\n            Higher cells are supported.\n	    For a short description, see <a href="https://hal.science/hal-04407118v1">here</a>.\n        For a video demonstrating the mechanisation features, see <a href="https://github.com/amblafont/vscode-yade-example/releases/download/v0.1/demo-yade-example.mp4">here</a>.\n	    </p>\n	    <p>\n	    For LaTeX export, press (capital) \'X\' after selection. The output code relies on\n      a custom <a href="https://raw.githubusercontent.com/amblafont/graph-editor-web/master/tools/yade.sty">latex package</a>.\n	    </p>\n	    <p>\n            Read the tutorial first, and then try some <a href="?scenario=exercise1">exercise</a>.\n        </p>');
+var $author$project$HtmlDefs$introHtml = $author$project$HtmlDefs$textHtml('\n   <p>\n            A vi-inspired diagram editor, with              \n            (latex) labelled nodes and edges, tested with Firefox, written in <a href="https://elm-lang.org/">Elm</a> (see the code on \n        <a href="https://github.com/amblafont/graph-editor-web">github</a>).\n            Multiple collaboration is supported (check the <a href="https://github.com/amblafont/graph-editor-web/blob/master/README.md">README</a>).\n	    For a short description, see <a href="https://hal.science/hal-04407118v1">here</a>.\n        For a video demonstrating the mechanisation features, see <a href="https://github.com/amblafont/vscode-yade-example/releases/download/v0.1/demo-yade-example.mp4">here</a>.\n	    </p>\n	    <p>\n	    For LaTeX export, press (capital) \'X\' after selection. The output code relies on\n      a custom <a href="https://raw.githubusercontent.com/amblafont/graph-editor-web/master/tools/yade.sty">latex package</a>.\n	    </p>\n	    <p>\n            Read the tutorial first, and then try some <a href="?scenario=exercise1">exercise</a>.\n        </p>');
 var $author$project$Modes$isResizeMode = function (m) {
 	if (m.$ === 'ResizeMode') {
 		return true;
@@ -35151,7 +35297,7 @@ var $author$project$Main$viewGraph = function (model) {
 				_List_Nil,
 				_Utils_ap(
 					$author$project$HtmlDefs$introHtml,
-					(!_Utils_eq(model.scenario, $author$project$Msg$Watch)) ? _List_fromArray(
+					((!_Utils_eq(model.scenario, $author$project$Msg$Watch)) && model.saveLoadButtons) ? _List_fromArray(
 						[
 							A2(
 							$elm$html$Html$button,
@@ -35356,11 +35502,9 @@ var $author$project$Main$view = function (m) {
 };
 var $author$project$Main$main = $elm$browser$Browser$element(
 	{
-		init: function (_v0) {
-			var defaultGridSize = _v0.defaultGridSize;
-			var rulerMargin = _v0.rulerMargin;
+		init: function (flags) {
 			return _Utils_Tuple2(
-				A2($author$project$Model$createModel, defaultGridSize, rulerMargin),
+				$author$project$Model$createModel(flags),
 				$elm$core$Platform$Cmd$none);
 		},
 		subscriptions: $author$project$Main$subscriptions,
@@ -35370,13 +35514,18 @@ var $author$project$Main$main = $elm$browser$Browser$element(
 _Platform_export({'Main':{'init':$author$project$Main$main(
 	A2(
 		$elm$json$Json$Decode$andThen,
-		function (rulerMargin) {
+		function (saveLoadButtons) {
 			return A2(
 				$elm$json$Json$Decode$andThen,
-				function (defaultGridSize) {
-					return $elm$json$Json$Decode$succeed(
-						{defaultGridSize: defaultGridSize, rulerMargin: rulerMargin});
+				function (rulerMargin) {
+					return A2(
+						$elm$json$Json$Decode$andThen,
+						function (defaultGridSize) {
+							return $elm$json$Json$Decode$succeed(
+								{defaultGridSize: defaultGridSize, rulerMargin: rulerMargin, saveLoadButtons: saveLoadButtons});
+						},
+						A2($elm$json$Json$Decode$field, 'defaultGridSize', $elm$json$Json$Decode$int));
 				},
-				A2($elm$json$Json$Decode$field, 'defaultGridSize', $elm$json$Json$Decode$int));
+				A2($elm$json$Json$Decode$field, 'rulerMargin', $elm$json$Json$Decode$int));
 		},
-		A2($elm$json$Json$Decode$field, 'rulerMargin', $elm$json$Json$Decode$int)))(0)}});}(this));
+		A2($elm$json$Json$Decode$field, 'saveLoadButtons', $elm$json$Json$Decode$bool)))(0)}});}(this));
