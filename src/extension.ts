@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as vsls from 'vsls';
 import { extensions } from "vscode";
 import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade, trySendYade } from './yade';
+// import { YadeEditorProvider } from './editor';
 
 const serverUrl = "ws://localhost:8080";
 
@@ -54,6 +55,14 @@ export function activate(context: vscode.ExtensionContext) {
 			launchYade(context, true);
 		})
 	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('coreact-yade.launchServer', () => 
+			import('./server.js').then(() => 
+				vscode.window.showInformationMessage('YADE server launched')
+			)
+		)
+	);
+	// context.subscriptions.push(YadeEditorProvider.register(context));
 	console.log("Now, testing liveshare api");
 	vsls.getApi().then((nullApi) => {
 		if (!nullApi) {

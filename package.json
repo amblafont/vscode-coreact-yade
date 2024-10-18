@@ -2,7 +2,7 @@
   "name": "coreact-yade",
   "displayName": "coreact-yade",
   "description": "Support for the coreact-yade editor",
-  "version": "0.0.9",
+  "version": "0.0.11",
   "publisher": "amblafont",
   "engines": {
     "vscode": "^1.92.0"
@@ -28,6 +28,10 @@
       {
         "command": "coreact-yade.launchYade",
         "title": "Launch YADE"
+      },
+      {
+        "command": "coreact-yade.launchServer",
+        "title": "Launch YADE server"
       },
       {
         "command": "coreact-yade.launchExperimentalYade",
