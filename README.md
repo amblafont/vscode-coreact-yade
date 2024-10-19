@@ -19,7 +19,7 @@ See https://github.com/amblafont/vscode-yade-example for an example of use.
 ## Experimental version
 
 This extension is shipped with a version of the editor whose mechanisation features have been tested.
-The last version of the editor available at https://amblafont.github.io/graph-editor-experimental/index.html can alternatively be used using the "Launch experimental YADE" command.
+The last version of the editor available at https://amblafont.github.io/graph-editor/index.html can alternatively be used using the "Launch experimental YADE" command.
 
 ## Requirements
 
@@ -50,5 +50,4 @@ No need for the desktop version of coreact-yade: it directly runs in a vscode ta
 ### Initial release
 
 Initial release of the coreact-yade  extension
-
 
