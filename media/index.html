@@ -12,14 +12,14 @@
         <script src="js/bundle.js"></script>
         
         <!-- The loading of KaTeX is deferred to speed up page rendering -->
-        <script src="js/katex.min.css.js"></script>
+        <!-- <script src="js/katex.min.css.js"></script> -->
         <script src="js/katex-custom-element.js"></script>
     <script onLoad="initKatex()" 
-             defer src="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.js" integrity="sha384-g7c+Jr9ZivxKLnZTDUhnkOnsh30B4H0rpLUpJ4jAIKs4fnJI+sEnkvrMWph2EDg4" crossorigin="anonymous"></script>
+             defer src="katex/katex.min.js"></script>
 
        
 
-             <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css" integrity="sha384-AfEj0r4/OFrOo5t7NnNe46zW/tFgW6x/bCJG8FqQCEo3+Aro6EYUG4+cU+KJWu/X" crossorigin="anonymous">
+             <script src="katex/katex.min.css.js"></script>
 
         
         
@@ -166,6 +166,7 @@ if ('serviceWorker' in navigator) {
 
     <body>       
         <h1>Diagram editor</h1>
+        File: <span id="filename">(no file)</span>
         <button id="install" hidden>Install for offline use</button>
         <button id="connect" onclick="tryConnect()">Connect to server</button>
         <span id="connect-status"></span>
@@ -244,6 +245,10 @@ function disableInAppInstallPrompt() {
             // but the delay was too long and meanwhile the browser had dealt with the event.
             if (e.keyCode == 9) 
               e.preventDefault(); 
+            // let us do it with the space key as well
+            // no, that's a bad idea: then it doesn't work when editing a label
+            // if (e.keyCode == 32) 
+            //   e.preventDefault();
 
             // Deactivate reloading with ctrl-R
             if (e.ctrlKey && e.key === "r") 
@@ -317,7 +322,14 @@ function disableInAppInstallPrompt() {
 
         function setFileName(newName) {
             document.title = newName;
-        }      
+            document.getElementById("filename").textContent = newName;
+        }
+        function getFileName(newName) {
+            return document.getElementById("filename").textContent;
+        }
+        function resetFileName() {
+            setFileName("(no file)");
+        }
 
          // we send a signal [keyInput] to elm and recieve
          // the answer on [keyOutput]
@@ -526,7 +538,7 @@ function disableInAppInstallPrompt() {
                 }
                 var promise = new Promise((resolve) => resolve("") );
                 if (config.preambleFile)
-                    promise = getTextFromFilepath(dirHandle,config.preambleFile);
+                    promise = Bundle.getTextFromFilepath(dirHandle,config.preambleFile);
                 promise.then(function(preamble) {
                     app.ports.clear.send({scenario:"watch", preamble:preamble});
                     processWatchedFile(config,preamble, dirHandle);
@@ -782,9 +794,11 @@ function disableInAppInstallPrompt() {
             })
          );
 
-         triggerElmCopy = makeElmRequest('onCopy', 'clipboardWriteGraph', function(g) {
+
+         app.ports.clipboardWriteGraph.subscribe(function(g) {
             navigator.clipboard.writeText(JSON.stringify(g));                                     
-         })
+         });
+
 
          function toClipboard({content, success, failure}) {
             navigator.clipboard.writeText(content).then(
@@ -871,7 +885,10 @@ function disableInAppInstallPrompt() {
 
 
          document.addEventListener("copy", function(event) {
-                    triggerElmCopy(null);
+                    app.ports.onCopy.send(null);
+         });
+         document.addEventListener("cut", function(event) {
+                    app.ports.onCut.send(null);
          });
       
 
@@ -911,8 +928,11 @@ function disableInAppInstallPrompt() {
          function connectToServer(rep) {
             console.log("connecting to " + rep);
             ws = new WebSocket(rep);
+            var intervalId = null;
             ws.onclose = function(event) {
                 online = false;
+                if (intervalId !== null)
+                    clearInterval(intervalId);
                 document.getElementById("connect-status").textContent = "";
                 if (event.wasClean) {
                     customAlert(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
@@ -926,11 +946,26 @@ function disableInAppInstallPrompt() {
             ws.addEventListener("open", function (event) {
             // socket.send("Coucou le serveur !");
                 online = true;
-                document.getElementById("connect-status").textContent = "(connected)";
-                Bundle.expectedIdFromServer = 0;
-                customAlert("YADE is connected to server");
-                Bundle.requestSnapshot(ws);
                 
+                
+                document.getElementById("connect-status").textContent = "(connected)";
+                Bundle.resetExpectedId();
+                let msg = "YADE is connected to server.";
+                if (currentFileHandle) {
+                    if (!confirm(msg + 
+                        " Keep editing " + getFileName() + "?")) {
+                        currentFileHandle = undefined;
+                        resetFileName();
+                    }
+                }
+                else {
+                    customAlert(msg);
+                }                
+                
+                Bundle.requestSnapshot(ws);
+                // Every 30s we send a ping to the server
+                // so that it knows what is our last seen id
+                intervalId = setInterval(() => Bundle.requestSnapshot(ws), 30000);
             });
 
             // Écouter les messages

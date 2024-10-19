@@ -8,9 +8,6 @@ import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setC
 
 const serverUrl = "ws://localhost:8080";
 
-const relativeLinks = ["elm.js","js/katex.min.css.js",
-"js/katex-custom-element.js"
-]
 export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Activating coreact-yade');

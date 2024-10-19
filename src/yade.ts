@@ -4,18 +4,9 @@ import {
 	VersionedTextDocumentIdentifier,
   } from "vscode-languageclient";
 
-// import {client} from './client'
 import { GoalRequest, GoalAnswer, PpString } from "./types";
 
-
-const relativeLinks = ["js/katex.min.css.js",
-  "js/elm.js","js/bundle.js",
-"js/katex-custom-element.js"
-];
-
 const experimentalLink = "https://amblafont.github.io/graph-editor/";
-// const experimentalLink = "http://localhost:8000/";
-
 
 // Extension API type (note this doesn't live in `lib` as this is VSCode specific)
 export interface CoqLspAPI {
@@ -49,6 +40,70 @@ export function getCoqApi() : CoqLspAPI | undefined {
 let yadePanel: vscode.WebviewPanel | undefined = undefined;
 let coqEditor : vscode.TextEditor | undefined = undefined;
 
+/*
+return the list of filenames recursively found in the directory.
+The filenames are prefixed with the prefix string.
+*/
+function listFilesWithPrefix(context:vscode.ExtensionContext, prefix:string, uri: vscode.Uri):PromiseLike<string[]> {
+  let files : string[] = [];
+  
+  return vscode.workspace.fs.readDirectory(uri).then(
+    (value) => {
+      let directories: PromiseLike<string[]>[] = [];
+      for (var file of value) {
+        const name = file[0];
+        const type = file[1];
+        if (type == vscode.FileType.Directory) {
+          const list = 
+             listFilesWithPrefix(context, prefix + name + "/", vscode.Uri.joinPath(uri, name));
+          directories.push(list);
+        }
+        if (type == vscode.FileType.File)
+          files.push(prefix + name);
+      }
+      return Promise.all(directories);
+    }
+  ).then( 
+    (values) => {
+      for (var value of values) {
+        files = files.concat(value);
+      }
+      return files;
+    }
+  )
+}
+
+function getMediaUri(context:vscode.ExtensionContext):vscode.Uri {
+  return vscode.Uri.joinPath(context.extensionUri, 'media');
+}
+
+function listReplacementLinks(context:vscode.ExtensionContext):PromiseLike<string[]> {
+  const mediaUri = getMediaUri(context);
+  return listFilesWithPrefix(context, "", mediaUri);
+}
+
+function injectKatexCss(context:vscode.ExtensionContext,   htmlContent:PromiseLike<string>):PromiseLike<string> {
+  const mediaUri = getMediaUri(context);
+  const script = '<script src="katex/katex.min.css.js"></script>';
+  const scriptPath = vscode.Uri.joinPath(mediaUri, 'katex/katex.min.css.js');
+  
+  return vscode.workspace.fs.readFile(scriptPath)
+  .then (scriptContent => {
+    // Convert Uint8Array to string
+    return new TextDecoder().decode(scriptContent);
+  })
+  .then(scriptContent => Promise.all([htmlContent, scriptContent]))
+  .then(
+    ([htmlData, scriptContent]) => {
+      return htmlData.replace(script, "<script>" + scriptContent + "</script>");
+    }
+  );
+}
+
+function regexNotPrefixed(prefix:string, pattern:string):RegExp {
+  return new RegExp("(?<!"+ prefix + ")" + pattern, "g");
+}
+
 export function launchYade(context:vscode.ExtensionContext, experimental = false):vscode.WebviewPanel {
 	if (yadePanel !== undefined)
 	   {return yadePanel;}
@@ -62,65 +117,67 @@ export function launchYade(context:vscode.ExtensionContext, experimental = false
         , retainContextWhenHidden: true // keep the state of the webview when hidden
         ,  localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')]
     }
-);
+  );
   panel.onDidDispose(() => {
    yadePanel = undefined;
   });
 
 
-// use the fetch api to get the file https://amblafont.github.io/graph-editor-experimental/index.html
-// and then replace the relative links with the correct ones
+  // use the fetch api to get the file https://amblafont.github.io/graph-editor-experimental/index.html
+  // and then replace the relative links with the correct ones
 
-let htmlPromise: PromiseLike<string>;
-const mediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
+  let htmlPromise: PromiseLike<string>;
+  const mediaUri = vscode.Uri.joinPath(context.extensionUri, 'media');
 
-if (experimental)
-  htmlPromise = fetch(experimentalLink + 'index.html')
-  .then(response => response.text());
-else {
-  // Get the path to the HTML file
-  const htmlPath = vscode.Uri.joinPath(mediaUri, 'index.html');
-  htmlPromise = vscode.workspace.fs.readFile(htmlPath)
-  .then (htmlContentArr => {
-    // Convert Uint8Array to string
-    return new TextDecoder().decode(htmlContentArr);
-  });
-
-}
-
-  
-
-
-
-// Read the HTML file content
-htmlPromise.then (htmlContent => {
-for (var relLink of relativeLinks) {
-  // Get path to resource on disk
-  let correctLink: string;
   if (experimental)
-    correctLink = experimentalLink + relLink;
+    htmlPromise = fetch(experimentalLink + 'index.html')
+    .then(response => response.text());
   else {
-    const onDiskPath = vscode.Uri.joinPath(mediaUri, relLink); 
-    // And get the special URI to use with the webview
-    correctLink = panel.webview.asWebviewUri(onDiskPath).toString();
+    // Get the path to the HTML file
+    const htmlPath = vscode.Uri.joinPath(mediaUri, 'index.html');
+    
+    htmlPromise = vscode.workspace.fs.readFile(htmlPath)
+    .then (htmlContentArr => {
+      // Convert Uint8Array to string
+      return new TextDecoder().decode(htmlContentArr);
+    });
+
   }
 
-  htmlContent = htmlContent.replace(relLink, correctLink);
-}
 
-// Set the HTML content to the webview
-panel.webview.html = htmlContent;
-});
-// Handle messages from the webview
-panel.webview.onDidReceiveMessage(
-  message => {
-	  handleMsg(context,message);
-  },
-  undefined,
-  context.subscriptions
-);
-yadePanel = panel;
-return yadePanel;
+  Promise.all([injectKatexCss(context, htmlPromise), listReplacementLinks(context)])
+  // Read the HTML file content
+  .then (([htmlContent, relativeLinks]) => {
+    for (var relLink of relativeLinks) {
+      // Get path to resource on disk
+      let regex:RegExp;
+      let correctLink:string;
+      if (experimental) {
+        correctLink = experimentalLink + relLink;
+        regex = regexNotPrefixed(experimentalLink, relLink);
+      }
+      else {
+        const onDiskPath = vscode.Uri.joinPath(mediaUri, relLink); 
+        correctLink = panel.webview.asWebviewUri(onDiskPath).toString();
+        // regex that matches relLink only if it is not preceded by media.
+        // (otherwise it means the link has already been replaced)
+        regex = regexNotPrefixed("media.", relLink);
+      }
+      htmlContent = htmlContent.replaceAll(regex, correctLink);
+    }
+    // Set the HTML content to the webview
+    panel.webview.html = htmlContent;
+  });
+  // Handle messages from the webview
+  panel.webview.onDidReceiveMessage(
+    message => {
+      handleMsg(context,message);
+    },
+    undefined,
+    context.subscriptions
+  );
+  yadePanel = panel;
+  return yadePanel;
 
 }
 

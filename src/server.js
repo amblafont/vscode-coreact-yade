@@ -166,8 +166,8 @@ wss.on('connection', function connection(ws) {
         // console.log('the queue:');
         // console.log(queue);
         var msg = JSON.parse(str);
-        if (msg.expectedId > getExpectedId(ws))
-            setExpectedId(ws, msg.expectedId);
+        // if (msg.expectedId > getExpectedId(ws))
+        setExpectedId(ws, msg.expectedId);
         if (msg.expectedId > nextId) {
             closeConnection(ws, "impossible: expectedId(" + msg.expectedId + ") > nextId(" + nextId + ")");
             return;
