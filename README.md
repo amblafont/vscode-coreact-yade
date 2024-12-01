@@ -35,6 +35,11 @@ The experimental version of YADE does not work with vscode.dev because of https:
 
 ## Release Notes
 
+### 0.0.13
+
+- upgrade to last version of coreact-yade
+- Proofs can be arbitrary complex (tactics can be separated by ".")
+
 ### 0.0.7
 
 Integrated YADE server.
