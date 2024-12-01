@@ -327,7 +327,7 @@ export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, 
    textDocument,
    position: endLinePosition,
    pp_format: "Str",
-   pretac: "norm_graph."
+   command: "norm_graph."
   };
  api.goalsRequest(strCursor).then(
    (goals) => { 
@@ -429,12 +429,10 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
     return
   }
   let normalisedProof = proofScript.trim();
-  if (normalisedProof != "" && normalisedProof.substring(normalisedProof.length - 1) == ".")
-     normalisedProof = normalisedProof.substring(0, normalisedProof.length - 1)
-  // const fullProof = "(eassert (yade : " + statement + ");first by "
-  //         + proofScript + "); norm_graph_hyp yade.";
-  const fullProof = "(eassert (yade : " + statement + "); first by "
-          + normalisedProof + ") ; norm_graph_hyp yade.";
+  if (normalisedProof != "" && normalisedProof.substring(normalisedProof.length - 1) != ".")
+     normalisedProof += "." // normalisedProof.substring(0, normalisedProof.length - 1)
+  const fullProof = "eassert (yade : " + statement + "). { "
+          + normalisedProof + " } norm_graph_hyp yade.";
   console.log(fullProof)
   let uri = editor.document.uri;
   let version = editor.document.version;
@@ -447,14 +445,14 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
    textDocument,
    position: editor.selection.active,
    pp_format: "Str",
-   pretac: fullProof
+   command: fullProof
  };
 
  function explainFailure() {
   let msg : string
-  if (normalisedProof.includes("."))
-     msg = 'Failed proof, probably due to the use of dot-separated tactics (not yet supported)';
-  else 
+  // if (normalisedProof.includes("."))
+    //  msg = 'Failed proof, probably due to the use of dot-separated tactics (not yet supported)';
+  // else 
      msg = 'Failed proof: ' + fullProof;  
   vscode.window.showErrorMessage(msg);
  }
