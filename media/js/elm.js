@@ -32246,16 +32246,20 @@ var $author$project$Main$update = F2(
 			case 'SetFirstTab':
 				var g = msg.a;
 				var tab = $author$project$Format$GraphInfo$getActiveTab(g);
-				return _Utils_Tuple2(
-					A2(
-						$author$project$Model$updateFirstTab,
-						model,
-						function (t) {
-							return _Utils_update(
-								tab,
-								{title: t.title});
-						}),
-					$author$project$HtmlDefs$computeLayout(_Utils_Tuple0));
+				var newModel = A2(
+					$author$project$Model$updateFirstTab,
+					model,
+					function (t) {
+						return _Utils_update(
+							tab,
+							{title: t.title});
+					});
+				return _Utils_eq(model.graphInfo.latexPreamble, g.latexPreamble) ? _Utils_Tuple2(
+					newModel,
+					$author$project$HtmlDefs$computeLayout(_Utils_Tuple0)) : A2(
+					$author$project$CommandCodec$updateModif,
+					newModel,
+					$author$project$Format$GraphInfo$LatexPreamble(g.latexPreamble));
 			case 'Loaded':
 				var scenario = msg.a.scenario;
 				var graph = msg.a.graph;
