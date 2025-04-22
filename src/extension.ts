@@ -3,7 +3,7 @@
 import * as vscode from 'vscode';
 import * as vsls from 'vsls';
 import { extensions } from "vscode";
-import { CoqLspAPI, sendYade, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade, trySendYade } from './yade';
+import { CoqLspAPI, sendSetFirstTab, sendSetFirstTabEquation, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade, trySendYade } from './yade';
 // import { YadeEditorProvider } from './editor';
 
 const serverUrl = "ws://localhost:8080";
@@ -25,11 +25,25 @@ export function activate(context: vscode.ExtensionContext) {
 			
 			const magic_string = "YADE DIAGRAM";
 			let line = editor.document.lineAt(position).text.trim();
-			if (line.startsWith(magic_string))
-			  sendYade(context, "set-first-tab", line.slice(magic_string.length));            
+			if (line.startsWith(magic_string)) {
+				let data = line.slice(magic_string.length);
+				try {
+					JSON.parse(data);
+					sendSetFirstTab(context, JSON.parse(data));            
+				} 
+				catch (e) {
+					if (e instanceof SyntaxError) {
+						sendSetFirstTabEquation(context,
+							  { statement : data,
+								isVerbatim : false
+					         });
+					}
+				}
+
+			}
 			else
 			  sendNewEquation(context, coqApi, editor);
-			  }
+			}
 		)
 	  );
 

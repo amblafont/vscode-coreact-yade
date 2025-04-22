@@ -8,6 +8,12 @@ import { GoalRequest, GoalAnswer, PpString } from "./types";
 
 const experimentalLink = "https://amblafont.github.io/graph-editor/";
 
+const tactic_explicit = "yade.to_notation_with_explicit_objects";
+const tactic_normalise_object = "yade.normalise_objects";
+const start_snipset = "(* START OF YADE SNIPSET *)";
+const end_snipset = "(* END OF YADE SNIPSET *)";
+const tactic_duplicate_yade = "let t := type of yade in eassert t";
+
 // Extension API type (note this doesn't live in `lib` as this is VSCode specific)
 export interface CoqLspAPI {
 	/**
@@ -241,7 +247,7 @@ function handleMsg(context:vscode.ExtensionContext,message:any) {
       vscode.window.showInputBox({prompt: question, value: defaultAnswer}).then(
         (answer) => {
           if (answer !== undefined)
-            sendYade(context, "prompt", answer);
+            sendPrompt(context, answer);
         }
       );
       break;
@@ -249,10 +255,18 @@ function handleMsg(context:vscode.ExtensionContext,message:any) {
       if (!editor) {return;}
       const statement = message.content.statement;
       const proof = message.content.script;
-			const startText = "eassert (yade : " + statement + ").\n{\n" + proof;
+			const startText = 
+         "\n" + start_snipset + "\n"
+         + "eassert (yade : " + statement + ").\n"
+         + "(* Your proof in the block below. When done, execute the command 'Complete diagram' (with ctrl-shift-P) while the mouse is in this block: it will save complete the diagram (saving the proof) and remove the snipset.  *)"
+         +"\n{\n" + proof;
       const endText = "\n}"
-        + "\n (* execute command at the end of the line below *)"
-        + "\n norm_graph_hyp yade.  ";
+        + "\n" + tactic_duplicate_yade + ".\n"
+        + "(* The below tactic is meant to be customised *)\n"
+        + tactic_normalise_object + ".\n" 
+        + "(* You can check the statement that will be send to the diagram at the end of the line below *)\n"
+        + tactic_explicit + ".\n"
+        + end_snipset + "\n" 
       // first, show the text editor with showTextDocument
       // vscode.window.showInformationMessage('incomplete equation');
       vscode.window.showTextDocument(editor.document, editor.viewColumn, true).then(function () {
@@ -297,7 +311,7 @@ function handleMsg(context:vscode.ExtensionContext,message:any) {
 	}
 }
 
-export function sendYade(context:vscode.ExtensionContext ,key:String, content:any) {
+function sendYade(context:vscode.ExtensionContext ,key:String, content:any) {
   
 	launchYade(context);
   trySendYade(context, key, content);
@@ -313,33 +327,89 @@ export function setCoqEditor(editor:vscode.TextEditor) {
   coqEditor = editor;
 }
 
-export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, editor:vscode.TextEditor) {
+function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI, position:vscode.Position):Promise<markupContent | null> {
   let version = editor.document.version;
+  let uri = editor.document.uri;
+  let textDocument = VersionedTextDocumentIdentifier.create(
+    uri.toString(),
+    version
+  );
+  let strCursor: GoalRequest = {
+    textDocument,
+    position: position,
+    pp_format: "Str",
+    command: command
+   };
+  return api.goalsRequest(strCursor).then(
+    (goals) => { 
+     
+        if (! goals.goals)
+          return null;
+       
+        let ty = goals.goals?.goals[0].ty;
+        if (typeof ty != "string") 
+           return null;
+        return extractContentIfWrapped(ty);
+     }
+    // (reason) => console.log("error: " + reason)
+  );
+}
+
+export function sendSetFirstTabEquation(context:vscode.ExtensionContext, msg : {statement : string, isVerbatim : boolean}) {
+  sendYade(context, "set-first-tab-equation", msg);
+}
+
+// function sendLoad(context:vscode.ExtensionContext, msg : any) {
+//   sendYade(context, "load", msg);
+// }
+export function sendSetFirstTab(context:vscode.ExtensionContext, msg : any) {
+  sendYade(context, "set-first-tab", msg);
+}
+
+function sendApplyProof(context:vscode.ExtensionContext, 
+    msg : {statement : string, script : string, isVerbatim : boolean}) {
+    sendYade(context, "applied-proof", msg);
+}
+
+function sendPrompt(context:vscode.ExtensionContext, 
+    msg:string){
+      sendYade(context, "prompt", msg);
+}
+
+
+
+export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, editor:vscode.TextEditor) {
+  
   let position = editor.selection.active;
   let line = editor.document.lineAt(position);
   let endLinePosition = line.range.end;
-  let uri = editor.document.uri;
-  let textDocument = VersionedTextDocumentIdentifier.create(
-   uri.toString(),
-   version
-  );
-  let strCursor: GoalRequest = {
-   textDocument,
-   position: endLinePosition,
-   pp_format: "Str",
-   command: "norm_graph."
-  };
- api.goalsRequest(strCursor).then(
-   (goals) => { 
-    
-       if (! goals.goals)
-         return;
-       sendYade(context, "load", goals.goals?.goals[0].ty);
+
+
+  getStatementAt(editor, tactic_explicit + ".", api, endLinePosition).then(
+    (statement) => {
+      if (statement === null)
+        return;
+      sendSetFirstTabEquation(context, {statement : statement.content, 
+                isVerbatim : isVerbatim(statement)});
     },
    (reason) => console.log("error: " + reason)
  );
 }
 
+type markupContent = { tag : string, content : string };
+
+function isVerbatim(m : markupContent):boolean {
+  return m.tag.toLowerCase().includes("verb");
+}
+
+function extractContentIfWrapped(str: string): markupContent | null {
+  const match = str.match(/^\s*<([^>]+)>([\s\S]*)<\/([^>]+)>\s*$/);
+  if (!match)
+      return null;
+  if (match[1] != match[3])
+      return null;
+  return { tag : match[1], content : match[2]};
+}
 
 function findCoqScript(document : vscode.TextDocument, endLineNumber:number):
    {assertLine : number, startScript : number, endScript : number}
@@ -354,7 +424,7 @@ function findCoqScript(document : vscode.TextDocument, endLineNumber:number):
     }
     let endScriptNumber = lineNumber - 1;
     lineTrimmed = ""
-    while(!lineTrimmed.startsWith("eassert (yade")) {
+    while(lineTrimmed != start_snipset) {
         lineNumber --;
         // console.log("line number: " + lineNumber);
         lineTrimmed = document.lineAt(lineNumber).text.trim();
@@ -368,11 +438,11 @@ function findCoqScript(document : vscode.TextDocument, endLineNumber:number):
     return { assertLine : assertLineNumber, startScript : lineNumber + 1, endScript: endScriptNumber };
 }
 
-function findNextNormGraphHyp(editor:vscode.TextEditor):vscode.Position {
+function findEndOfSnipset(editor:vscode.TextEditor):vscode.Position {
   let lineNumber = editor.selection.active.line;
   
-  while(editor.document.lineAt(lineNumber).text.replaceAll(" ","") 
-     != "norm_graph_hypyade.") {
+  while(editor.document.lineAt(lineNumber).text.trim() 
+     != end_snipset) {
     lineNumber ++;
   }
   return editor.document.lineAt(lineNumber).range.end;
@@ -381,9 +451,6 @@ function findNextNormGraphHyp(editor:vscode.TextEditor):vscode.Position {
 
 export function completeEquation(context:vscode.ExtensionContext, coqApi:CoqLspAPI, editor: vscode.TextEditor) {
   coqEditor = editor;
-  let uri = editor.document.uri;
-  let version = editor.document.version;
-  let position = editor.selection.active;
 
   // if (editor.document.lineAt(position).text.replaceAll(" ","")
   //       == "norm_graph.") {
@@ -392,34 +459,36 @@ export function completeEquation(context:vscode.ExtensionContext, coqApi:CoqLspA
   // }
 
   // TODO: factor with sendNewEquation
-  let normPosition = findNextNormGraphHyp(editor);
+  let normPosition = findEndOfSnipset(editor);
   let line = normPosition.line
   const {assertLine, startScript, endScript} = findCoqScript(editor.document, normPosition.line);
   let coqScript = editor.document.getText(new Range(startScript, 0, endScript + 1, 0));
   // remove the last newline character
   coqScript = coqScript.slice(0, -1);
-  // console.log("coq script: ") ;
-  // console.log(coqScript);
-  let textDocument = VersionedTextDocumentIdentifier.create(
-     uri.toString(),
-     version
-   );
-  let strCursor: GoalRequest = {
-    textDocument,
-    position: normPosition,
-    pp_format: "Str",
-  };
-  coqApi.goalsRequest(strCursor).then(
-    (goals) => { 
-        var hyps = goals.goals?.goals[0].hyps;
-        var eq = hyps![hyps!.length - 1].ty;
-        sendYade(context, "applied-proof", {statement:eq, script:coqScript});
-        editor.edit(editBuilder => {
-            editBuilder.delete(new Range(assertLine, 0, line + 1, 0));
-        });
-     },
-    (reason) => console.log("error: " + reason)
-  );
+
+  
+  getStatementAt(editor, "", coqApi, normPosition).then(
+    (statement) => {
+      if (statement === null)
+        return;
+      sendApplyProof(context, {statement:statement.content, script:coqScript, isVerbatim : isVerbatim(statement)});
+      editor.edit(editBuilder => {
+        editBuilder.delete(new Range(assertLine, 0, line + 1, 0));
+      });
+    },
+   (reason) => console.log("error: " + reason)
+ );
+  // coqApi.goalsRequest(strCursor).then(
+  //   (goals) => { 
+  //       var hyps = goals.goals?.goals[0].hyps;
+  //       var eq = hyps![hyps!.length - 1].ty;
+  //       sendYade(context, "applied-proof", {statement:eq, script:coqScript});
+  //       editor.edit(editBuilder => {
+  //           editBuilder.delete(new Range(assertLine, 0, line + 1, 0));
+  //       });
+  //    },
+  //   (reason) => console.log("error: " + reason)
+  // );
 }
 
 function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement:string, proofScript:string) {
@@ -432,21 +501,13 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
   if (normalisedProof != "" && normalisedProof.substring(normalisedProof.length - 1) != ".")
      normalisedProof += "." // normalisedProof.substring(0, normalisedProof.length - 1)
   const fullProof = "eassert (yade : " + statement + "). { "
-          + normalisedProof + " } norm_graph_hyp yade.";
-  console.log(fullProof)
-  let uri = editor.document.uri;
-  let version = editor.document.version;
-          
-  let textDocument = VersionedTextDocumentIdentifier.create(
-    uri.toString(),
-    version
-  );
- let strCursor: GoalRequest = {
-   textDocument,
-   position: editor.selection.active,
-   pp_format: "Str",
-   command: fullProof
- };
+          + normalisedProof + " } " 
+          + tactic_duplicate_yade + ". " +
+            tactic_normalise_object + ". " + 
+            tactic_explicit + ".";
+  // console.log(fullProof)
+  
+
 
  function explainFailure() {
   let msg : string
@@ -456,24 +517,39 @@ function applyProof(context:vscode.ExtensionContext, coqApi:CoqLspAPI, statement
      msg = 'Failed proof: ' + fullProof;  
   vscode.window.showErrorMessage(msg);
  }
- coqApi.goalsRequest(strCursor).then(
-   (goals) => { 
-       var hyps = goals.goals?.goals[0].hyps;
-       if (!hyps) {
-        explainFailure();
-        return;
-       }
-       vscode.window.showInformationMessage('Valid proof: ' + fullProof);
+
+ getStatementAt(editor, fullProof, coqApi, editor.selection.active).then(
+  (statement) => {
+    if (statement === null) {
+      explainFailure();
+      return;
+    }
+    vscode.window.showInformationMessage('Valid proof: ' + fullProof);
+    let data = { script: proofScript, statement:statement.content, 
+       isVerbatim : isVerbatim(statement)  
+    }; 
+    sendApplyProof(context, data);      
+    // sendYade(context, "applied-proof", data);
+  },
+  (reason) => { 
+    explainFailure();
+    console.log("error: " + reason); }
+);
+//  coqApi.goalsRequest(strCursor).then(
+//    (goals) => { 
+//        var hyps = goals.goals?.goals[0].hyps;
+//        if (!hyps) {
+//         explainFailure();
+//         return;
+//        }
+//        vscode.window.showInformationMessage('Valid proof: ' + fullProof);
          
-       console.log(goals);
-       var eq = hyps![hyps!.length - 1].ty;
-       var data = { script: proofScript, statement:eq};
+//        console.log(goals);
+//        var eq = hyps![hyps!.length - 1].ty;
+//        var data = { script: proofScript, statement:eq};
        
-       sendYade(context, "applied-proof", data);
-    },
-   (reason) => { 
-     explainFailure();
-     console.log("error: " + reason); }
- );
+//        sendYade(context, "applied-proof", data);
+//     },
+
 }
 
