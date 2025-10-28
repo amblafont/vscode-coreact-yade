@@ -435,14 +435,14 @@ function disableInAppInstallPrompt() {
          function openFile() {
             openFileFun();
          }
-         app.ports.pointerLock.subscribe(function () {
-            appDiv.requestPointerLock().then(() => mouseLockDelta = [0, 0]);
-         });
+        //  app.ports.pointerLock.subscribe(function () {
+        //     appDiv.requestPointerLock().then(() => mouseLockDelta = [0, 0]);
+        //  });
 
-         app.ports.pointerUnlock.subscribe(function () {
-            mouseLockDelta = null;
-            document.exitPointerLock();
-         });
+        //  app.ports.pointerUnlock.subscribe(function () {
+        //     mouseLockDelta = null;
+        //     document.exitPointerLock();
+        //  });
 
          app.ports.openFile.subscribe(openFile);
 
@@ -1116,7 +1116,7 @@ function disableInAppInstallPrompt() {
             app.ports.generateProofJs.subscribe(function(script){
                 sendExternalMsg("generate-proof",processProof(script));
             });
-            connectToServer(defaultServer);
+            // connectToServer(defaultServer);
        }
 
 

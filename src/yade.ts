@@ -86,7 +86,7 @@ function getMediaUri(context:vscode.ExtensionContext):vscode.Uri {
 function listReplacementLinks(context:vscode.ExtensionContext):PromiseLike<string[]> {
   const mediaUri = getMediaUri(context);
   // read the file mediaUri/files 
-  const filesPath = vscode.Uri.joinPath(mediaUri, 'files');
+  const filesPath = vscode.Uri.joinPath(mediaUri, 'files.txt');
   return vscode.workspace.fs.readFile(filesPath)
     .then(fileContent => {
       const content = new TextDecoder().decode(fileContent);

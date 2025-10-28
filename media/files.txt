@@ -1,7 +1,7 @@
 ./README
 ./katex/katex.min.css.js
 ./katex/katex.min.js
-./files
+./files.txt
 ./index.html
 ./js/katex-custom-element.js:Zone.Identifier
 ./js/elm.js
