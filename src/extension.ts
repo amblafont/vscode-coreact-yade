@@ -11,10 +11,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Activating coreact-yade');
 
-
+	let in_didchange_callback  = false;
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(
 		  (evt: vscode.TextEditorSelectionChangeEvent) => {
+			 if(in_didchange_callback) {
+					console.log("reentry");
+					return;
+			 }
+			 in_didchange_callback = true;
             let coqApi = getCoqApi();
 			if (!coqApi) return;
 	
@@ -42,6 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 			else
 			  sendNewEquation(context, coqApi, editor);
+			in_didchange_callback = false;
 			}
 		)
 	  );

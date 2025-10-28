@@ -352,6 +352,7 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
     pp_format: "Str",
     command: command
    };
+  console.log("asking coq goal")
   return api.goalsRequest(strCursor).then(
     (goals) => { 
         if (! goals.goals)
@@ -362,7 +363,7 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
            return null;
         return extractContentIfWrapped(ty);
      }
-    , (reason) => {console.log("error: " + reason); return null}
+    , (reason) => {console.log("coq-lsp api error: " + reason); return null}
   );
 }
 
