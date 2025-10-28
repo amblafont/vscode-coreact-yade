@@ -85,7 +85,18 @@ function getMediaUri(context:vscode.ExtensionContext):vscode.Uri {
 
 function listReplacementLinks(context:vscode.ExtensionContext):PromiseLike<string[]> {
   const mediaUri = getMediaUri(context);
-  return listFilesWithPrefix(context, "", mediaUri);
+  // read the file mediaUri/files 
+  const filesPath = vscode.Uri.joinPath(mediaUri, 'files');
+  return vscode.workspace.fs.readFile(filesPath)
+    .then(fileContent => {
+      const content = new TextDecoder().decode(fileContent);
+
+      // remove the starting './'
+      return content.split('\n').map(line => line.substring(2)).filter(line => line.length > 0);
+    });
+
+
+  // return listFilesWithPrefix(context, "", mediaUri);
 }
 
 function injectKatexCss(context:vscode.ExtensionContext,   htmlContent:PromiseLike<string>):PromiseLike<string> {
@@ -351,7 +362,7 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
            return null;
         return extractContentIfWrapped(ty);
      }
-    // (reason) => console.log("error: " + reason)
+    , (reason) => {console.log("error: " + reason); return null}
   );
 }
 

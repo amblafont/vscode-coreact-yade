@@ -6,7 +6,6 @@ import { extensions } from "vscode";
 import { CoqLspAPI, sendSetFirstTab, sendSetFirstTabEquation, sendNewEquation, completeEquation, getCoqApi, setCoqEditor, launchYade, trySendYade } from './yade';
 // import { YadeEditorProvider } from './editor';
 
-const serverUrl = "ws://localhost:8080";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -66,51 +65,8 @@ export function activate(context: vscode.ExtensionContext) {
 			launchYade(context, true);
 		})
 	);
-	context.subscriptions.push(
-		vscode.commands.registerCommand('coreact-yade.launchServer', () => 
-			import('./server.js').then(() => 
-				vscode.window.showInformationMessage('YADE server launched')
-			)
-		)
-	);
 	// context.subscriptions.push(YadeEditorProvider.register(context));
-	console.log("Now, testing liveshare api");
-	vsls.getApi().then((nullApi) => {
-		if (!nullApi) {
-			console.log('No LiveShare API');
-			return;
-		}
-		let api = nullApi;
-		
-		console.log('LiveShare API found');
-		function initialiseServer(session:vsls.Session) {
-			if (session.role == vsls.Role.Guest) {
-				trySendYade(context,"mayConnect", serverUrl);
-				return;
-			}
-			if (session.role == vsls.Role.Host) {
-				// launch YADE server
-				import('./server.js').then(() => {
-					console.log("alors");
-					api.shareServer(
-						{
-							port: 8080,
-							displayName: "YADE server",
-							browseUrl: serverUrl
-						}
-					);			
-					trySendYade(context,"mayConnect", serverUrl);
-				}, (err) => 
-					console.log(err)
-				).catch(err => console.log(err));
-				return;
-			}			
-		}
-		initialiseServer(api.session);
-		api.onDidChangeSession((e) => {
-			initialiseServer(e.session);	
-		});
-	});
+	
 }
 
 // This method is called when your extension is deactivated
