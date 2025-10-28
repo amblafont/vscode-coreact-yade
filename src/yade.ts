@@ -351,9 +351,10 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
     pp_format: "Str",
     command: command
    };
+  console.log("Asking Coq-lsp for statement at current line");
   return api.goalsRequest(strCursor).then(
     (goals) => { 
-     
+        console.log("Received goal info from Coq-lsp");
         if (! goals.goals)
           return null;
        
