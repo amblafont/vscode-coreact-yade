@@ -2,12 +2,6 @@
 
 This extension runs the [Coreact YADE editor](https://github.com/amblafont/graph-editor-web) in a vscode tab (webview) to help mechanising commutations of categorical diagrams with the Coq proof assistant. It builds upon the coq-lsp extension.
 
-## Collaborating on the same diagram
-
-The [Live Share extension](https://marketplace.visualstudio.com/items?itemName=MS-vsliveshare.vsliveshare) allows multiple users to collaborate on the same workspace. 
-
-The present extension enables collaboration on the same diagram during live sharing. First launch the editor (using the "Launch YADE" command), then join or create a liveshare session.
-If you are hosting the session, the extension will automatically launch the YADE server and prompt you to share it on the port 8080 (moreover, the editor will automatically connect to the server).
 
 ## Mechanisation features
 
@@ -34,6 +28,10 @@ None.
 The experimental version of YADE does not work with vscode.dev because of https://github.com/microsoft/vscode/issues/72900.
 
 ## Release Notes
+
+### 0.0.18
+
+Remove server implementation from the extension.
 
 ### 0.0.13
 
