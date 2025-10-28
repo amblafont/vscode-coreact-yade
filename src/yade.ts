@@ -338,23 +338,22 @@ export function setCoqEditor(editor:vscode.TextEditor) {
   coqEditor = editor;
 }
 
-function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI, position:vscode.Position):Promise<markupContent | null> {
+function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI, pos:vscode.Position):Promise<markupContent | null> {
   let version = editor.document.version;
   let uri = editor.document.uri;
   let textDocument = VersionedTextDocumentIdentifier.create(
     uri.toString(),
     version
   );
+  let position = { line: pos.line, character: pos.character };
   let strCursor: GoalRequest = {
     textDocument,
     position: position,
     pp_format: "Str",
     command: command
    };
-  console.log("Asking Coq-lsp for statement at current line");
   return api.goalsRequest(strCursor).then(
     (goals) => { 
-        console.log("Received goal info from Coq-lsp");
         if (! goals.goals)
           return null;
        

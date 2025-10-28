@@ -2,7 +2,7 @@
   "name": "coreact-yade",
   "displayName": "coreact-yade",
   "description": "Support for the coreact-yade editor",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "publisher": "amblafont",
   "engines": {
     "vscode": "^1.92.0"
@@ -19,6 +19,9 @@
   ],
   "browser": "./dist/web/extension.js",
   "main": "./out/extension.js",
+  "extensionDependencies": [
+    "ejgallego.coq-lsp"
+  ],
   "contributes": {
     "commands": [
       {

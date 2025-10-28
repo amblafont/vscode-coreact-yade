@@ -27,7 +27,13 @@ None.
 
 The experimental version of YADE does not work with vscode.dev because of https://github.com/microsoft/vscode/issues/72900.
 
+When developping, sideloading on vscode.dev does not work because of security restrictions on webviews. 
+
 ## Release Notes
+
+### 0.0.19
+
+Support for web extension (thanks Emilio for the help!)
 
 ### 0.0.18
 
