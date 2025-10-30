@@ -352,15 +352,19 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
     pp_format: "Str",
     command: command
    };
-  console.log("asking coq goal")
+  console.log("asking coq goal");
   return api.goalsRequest(strCursor).then(
-    (goals) => { 
+    (goals) => {
+        console.log("received coq goal"); 
+      
         if (! goals.goals)
           return null;
        
         let ty = goals.goals?.goals[0].ty;
+        console.log("type: " + ty);
         if (typeof ty != "string") 
            return null;
+        
         return extractContentIfWrapped(ty);
      }
     , (reason) => {console.log("coq-lsp api error: " + reason); return null}
@@ -391,21 +395,22 @@ function sendPrompt(context:vscode.ExtensionContext,
 
 
 export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, editor:vscode.TextEditor) {
-  
   let position = editor.selection.active;
   let line = editor.document.lineAt(position);
   let endLinePosition = line.range.end;
 
-
-  getStatementAt(editor, tactic_explicit + ".", api, endLinePosition).then(
-    (statement) => {
-      if (statement === null)
-        return;
-      sendSetFirstTabEquation(context, {statement : statement.content, 
-                isVerbatim : isVerbatim(statement)});
-    },
-   (reason) => console.log("error: " + reason)
- );
+  // wait 100ms to allow coq-lsp to process the last command
+  // and avoid race conditions
+  setTimeout(() => 
+    getStatementAt(editor, tactic_explicit + ".", api, endLinePosition).then(
+      (statement) => {
+        if (statement === null)
+          return;
+        sendSetFirstTabEquation(context, {statement : statement.content, 
+                  isVerbatim : isVerbatim(statement)});
+      },
+    (reason) => console.log("error: " + reason)
+ ), 1000);
 }
 
 type markupContent = { tag : string, content : string };
