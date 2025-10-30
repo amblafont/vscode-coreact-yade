@@ -7,6 +7,9 @@ import { CoqLspAPI, sendSetFirstTab, sendSetFirstTabEquation, sendNewEquation, c
 // import { YadeEditorProvider } from './editor';
 
 
+
+
+
 export function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Activating coreact-yade');
@@ -15,6 +18,9 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(
 		  (evt: vscode.TextEditorSelectionChangeEvent) => {
+			 if (vscode.languages.match({ language: "coq" }, evt.textEditor.document) < 1)
+			  return;
+
 			 if(in_didchange_callback) {
 					console.log("reentry");
 					return;
@@ -77,3 +83,4 @@ export function activate(context: vscode.ExtensionContext) {
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
+
