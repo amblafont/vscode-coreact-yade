@@ -352,10 +352,8 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
     pp_format: "Str",
     command: command
    };
-  console.log("asking coq goal");
-  return api.goalsRequest(strCursor).then(
-    (goals) => {
-        console.log("received coq goal"); 
+   function handleGoal(goals: GoalAnswer<PpString>):markupContent | null {
+       console.log("received coq goal"); 
       
         if (! goals.goals)
           return null;
@@ -366,9 +364,25 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
            return null;
         
         return extractContentIfWrapped(ty);
-     }
-    , (reason) => {console.log("coq-lsp api error: " + reason); return null}
-  );
+   }
+   console.log("Waiting 5s before asking coq goal");
+  return new Promise(resolve => 
+    setTimeout(() => resolve(null), 5000)
+  ).then (
+      () => 
+          {console.log("asking coq goal 1st time "); 
+           return api.goalsRequest(strCursor).then(handleGoal
+                   , (reason) => 
+                    {console.log("first attempt failed api error: " + reason); 
+                     return new Promise(resolve => 
+                       setTimeout(() => resolve(null), 1000))
+                        .then(() => {console.log("asking 2nd timecoq goal"); 
+                                return api.goalsRequest(strCursor).then(handleGoal
+                                      , (reason) => {console.log("second attempt failed api error: " + reason); 
+                                           return null } )}
+                              )
+                    }
+)});
 }
 
 export function sendSetFirstTabEquation(context:vscode.ExtensionContext, msg : {statement : string, isVerbatim : boolean}) {
@@ -399,18 +413,15 @@ export function sendNewEquation(context:vscode.ExtensionContext, api:CoqLspAPI, 
   let line = editor.document.lineAt(position);
   let endLinePosition = line.range.end;
 
-  // wait 100ms to allow coq-lsp to process the last command
-  // and avoid race conditions
-  setTimeout(() => 
     getStatementAt(editor, tactic_explicit + ".", api, endLinePosition).then(
       (statement) => {
-        if (statement === null)
+      if (statement === null)
           return;
         sendSetFirstTabEquation(context, {statement : statement.content, 
                   isVerbatim : isVerbatim(statement)});
       },
     (reason) => console.log("error: " + reason)
- ), 1000);
+   );
 }
 
 type markupContent = { tag : string, content : string };
