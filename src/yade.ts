@@ -365,6 +365,16 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
         
         return extractContentIfWrapped(ty);
    }
+console.log("2 requests coq goal");
+Promise.any(
+  [api.goalsRequest(strCursor),
+  api.goalsRequest(strCursor)]
+).then(handleGoal, 
+   (reason) => 
+               {console.log("2 attempts failed api error: " + reason); 
+                return null}
+);
+
    console.log("Waiting 5s before asking coq goal");
   return new Promise(resolve => 
     setTimeout(() => resolve(null), 5000)
