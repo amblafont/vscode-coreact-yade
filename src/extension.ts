@@ -15,6 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.window.onDidChangeTextEditorSelection(
 		  (evt: vscode.TextEditorSelectionChangeEvent) => {
+			if (vscode.languages.match({ language: "coq" }, evt.textEditor.document) < 1)
+				return;
             let coqApi = getCoqApi();
 			if (!coqApi) return;
 	

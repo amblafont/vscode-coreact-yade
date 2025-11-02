@@ -352,8 +352,13 @@ function getStatementAt(editor:vscode.TextEditor, command:string, api:CoqLspAPI,
     pp_format: "Str",
     command: command
    };
-  return api.goalsRequest(strCursor).then(
-    (goals) => { 
+  // bug: if I only send one goal request,
+  // I get goals interrupted error from coq-lsp
+  return Promise.any(
+      [api.goalsRequest(strCursor),
+      api.goalsRequest(strCursor)])
+    .then(
+      (goals) => { 
         if (! goals.goals)
           return null;
        
