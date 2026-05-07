@@ -22025,15 +22025,13 @@ var $author$project$HtmlDefs$dimsAttribute = function (_v0) {
 			$elm$core$String$fromFloat(height))
 		]);
 };
-var $elm$core$String$endsWith = _String_endsWith;
-var $author$project$Verbatim$verbatimCmd = '\\coqverb';
+var $author$project$Verbatim$verbatimCmd = '%verb ';
 var $author$project$Verbatim$extractVerbatim = function (s) {
-	var prefix = $author$project$Verbatim$verbatimCmd + '{';
-	return (A2($elm$core$String$startsWith, prefix, s) && A2($elm$core$String$endsWith, '}', s)) ? $elm$core$Maybe$Just(
-		A3(
-			$elm$core$String$slice,
+	var prefix = $author$project$Verbatim$verbatimCmd;
+	return A2($elm$core$String$startsWith, prefix, s) ? $elm$core$Maybe$Just(
+		A2(
+			$elm$core$String$dropLeft,
 			$elm$core$String$length(prefix),
-			-1,
 			s)) : $elm$core$Maybe$Nothing;
 };
 var $author$project$GraphDrawing$idToKey = A2($elm$core$Basics$composeR, $elm$core$String$fromInt, $elm$core$Maybe$Just);
@@ -22052,6 +22050,7 @@ var $author$project$Drawing$makeLatex = F2(
 				$author$project$Drawing$Node(
 					{angle: arg.angle, dims: arg.dims, label: arg.label, pos: arg.pos, preamble: arg.preamble, scale: arg.scale})));
 	});
+var $elm$core$String$filter = _String_filter;
 var $author$project$Drawing$makeVerbatimString = function (s) {
 	var verbatimDelimiters = _List_fromArray(
 		[
@@ -22076,7 +22075,11 @@ var $author$project$Drawing$makeVerbatimString = function (s) {
 		return '\\text{Err: unable to find a verbatim delimiter}';
 	} else {
 		var d = _v0.a;
-		return '\\verb' + (d + (s + d));
+		return '\\verb' + (d + (A2(
+			$elm$core$String$filter,
+			$elm$core$Basics$neq(
+				_Utils_chr('\n')),
+			s) + d));
 	}
 };
 var $author$project$Drawing$makeVerbatim = F2(
@@ -26938,7 +26941,7 @@ var $author$project$ArrowStyle$noMarker = '';
 var $author$project$ArrowStyle$empty = {bend: 0, color: $author$project$Drawing$Color$black, dashed: false, head: $author$project$ArrowStyle$DefaultHead, headColor: $author$project$Drawing$Color$black, kind: $author$project$ArrowStyle$NormalArrow, labelAlignment: $author$project$Geometry$Left, labelPosition: 0.5, marker: $author$project$ArrowStyle$noMarker, shiftSource: 0.5, shiftTarget: 0.5, tail: $author$project$ArrowStyle$DefaultTail, tailColor: $author$project$Drawing$Color$black, wavy: false};
 var $author$project$Verbatim$makeVerbatimLabel = F2(
 	function (isVerbatim, s) {
-		return isVerbatim ? ($author$project$Verbatim$verbatimCmd + ('{' + (s + '}'))) : s;
+		return isVerbatim ? _Utils_ap($author$project$Verbatim$verbatimCmd, s) : s;
 	});
 var $author$project$Polygraph$md_graph = function (_v0) {
 	var graph = _v0.a.graph;
